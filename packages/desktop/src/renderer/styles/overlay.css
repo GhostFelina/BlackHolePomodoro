@@ -1,0 +1,152 @@
+/*
+ * The overlay is a transparent window sitting over everything else, so every
+ * rule here is written to guarantee one thing: pixels we do not deliberately
+ * paint stay perfectly clear. No background, no borders, no default margins.
+ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  cursor: default;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-app-region: no-drag;
+}
+
+#stage {
+  position: fixed;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+}
+
+/* --------------------------------------------------------------- break chrome */
+
+.break-layer {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 4vmin;
+  text-align: center;
+
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 900ms cubic-bezier(0.22, 0.61, 0.36, 1);
+
+  font-family:
+    ui-rounded, -apple-system, 'Segoe UI Variable Display', 'Segoe UI', Inter, system-ui,
+    sans-serif;
+  color: #fff;
+}
+
+.break-layer.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.countdown {
+  font-size: clamp(4rem, 13vmin, 11rem);
+  font-weight: 200;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  /* Slightly off pure white: on OLED, #fff against #000 blooms. */
+  color: #f2f4f8;
+  text-shadow: 0 0 60px rgba(255, 210, 150, 0.18);
+}
+
+.subtitle {
+  max-width: 34ch;
+  font-size: clamp(1rem, 1.9vmin, 1.35rem);
+  font-weight: 300;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.55);
+  text-wrap: balance;
+}
+
+.notice {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.28);
+  opacity: 0;
+  transition: opacity 400ms ease;
+}
+
+.notice.visible {
+  opacity: 1;
+}
+
+/*
+ * The skip control is deliberately unglamorous and deliberately slow to arrive:
+ * it fades in only after the arm delay, and the first press only arms a
+ * confirmation. Breaking a break should take intent, not a reflex.
+ */
+.skip {
+  position: fixed;
+  inset-block-end: 3vmin;
+  inset-inline-end: 3.5vmin;
+
+  padding: 0.55rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+
+  font: inherit;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.32);
+
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 1200ms ease,
+    color 200ms ease,
+    border-color 200ms ease,
+    background-color 200ms ease;
+}
+
+.skip.ready {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.skip.ready:hover {
+  color: rgba(255, 255, 255, 0.72);
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.skip.armed {
+  color: #ffcf9a;
+  border-color: rgba(255, 180, 100, 0.45);
+  background: rgba(255, 150, 60, 0.1);
+}
+
+.skip:focus-visible {
+  outline: 2px solid rgba(255, 200, 140, 0.7);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .break-layer,
+  .skip,
+  .notice {
+    transition-duration: 1ms;
+  }
+}

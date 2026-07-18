@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>BlackHolock — effect preview</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #06070b;
+        color: #9aa0ad;
+        font: 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+        overflow: hidden;
+      }
+      #label {
+        padding: 6px 10px;
+      }
+      #stage {
+        display: block;
+        max-width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="label">loading…</div>
+    <canvas id="stage"></canvas>
+    <script type="module" src="./preview.ts"></script>
+  </body>
+</html>

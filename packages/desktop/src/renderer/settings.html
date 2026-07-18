@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;"
+    />
+    <title>BlackHolock</title>
+    <link rel="stylesheet" href="./styles/settings.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <nav class="sidebar">
+        <header class="brand">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span class="brand-text">
+            <strong data-i18n="app.name">BlackHolock</strong>
+            <small data-i18n="app.motto"></small>
+          </span>
+        </header>
+
+        <ul class="nav" role="tablist">
+          <li><button role="tab" data-section="timing" data-i18n="settings.section.timing"></button></li>
+          <li><button role="tab" data-section="appearance" data-i18n="settings.section.appearance"></button></li>
+          <li><button role="tab" data-section="break" data-i18n="settings.section.break"></button></li>
+          <li><button role="tab" data-section="language" data-i18n="settings.section.language"></button></li>
+          <li><button role="tab" data-section="system" data-i18n="settings.section.system"></button></li>
+          <li><button role="tab" data-section="about" data-i18n="settings.section.about"></button></li>
+        </ul>
+
+        <footer class="sidebar-foot">
+          <button id="reset" class="ghost" data-i18n="settings.reset"></button>
+        </footer>
+      </nav>
+
+      <main class="content">
+        <!-- ---------------------------------------------------------- timing -->
+        <section class="panel" data-panel="timing">
+          <h1 data-i18n="settings.section.timing"></h1>
+
+          <div class="presets" id="presets"></div>
+
+          <div class="field">
+            <label for="workMinutes" data-i18n="settings.workMinutes"></label>
+            <p class="help" data-i18n="settings.workMinutes.help"></p>
+            <div class="slider-row">
+              <input type="range" id="workMinutes" min="1" max="240" step="1" />
+              <output for="workMinutes" id="workMinutesOut"></output>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="breakMinutes" data-i18n="settings.breakMinutes"></label>
+            <p class="help" data-i18n="settings.breakMinutes.help"></p>
+            <div class="slider-row">
+              <input type="range" id="breakMinutes" min="1" max="120" step="1" />
+              <output for="breakMinutes" id="breakMinutesOut"></output>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="warningMinutes" data-i18n="settings.warningMinutes"></label>
+            <p class="help" data-i18n="settings.warningMinutes.help"></p>
+            <div class="slider-row">
+              <input type="range" id="warningMinutes" min="1" max="60" step="1" />
+              <output for="warningMinutes" id="warningMinutesOut"></output>
+            </div>
+          </div>
+
+          <figure class="timeline" aria-hidden="true">
+            <div class="timeline-bar">
+              <span class="seg seg-focus" id="segFocus"></span>
+              <span class="seg seg-warning" id="segWarning"></span>
+              <span class="seg seg-break" id="segBreak"></span>
+            </div>
+            <figcaption id="timelineCaption"></figcaption>
+          </figure>
+
+          <div class="toggles">
+            <label class="switch">
+              <input type="checkbox" id="autoContinue" />
+              <span class="switch-body"><i></i></span>
+              <span class="switch-text">
+                <strong data-i18n="settings.autoContinue"></strong>
+                <small data-i18n="settings.autoContinue.help"></small>
+              </span>
+            </label>
+
+            <label class="switch">
+              <input type="checkbox" id="autoStartOnLaunch" />
+              <span class="switch-body"><i></i></span>
+              <span class="switch-text">
+                <strong data-i18n="settings.autoStartOnLaunch"></strong>
+                <small data-i18n="settings.autoStartOnLaunch.help"></small>
+              </span>
+            </label>
+          </div>
+        </section>
+
+        <!-- ------------------------------------------------------ appearance -->
+        <section class="panel" data-panel="appearance" hidden>
+          <h1 data-i18n="settings.section.appearance"></h1>
+
+          <div class="field">
+            <label data-i18n="settings.effect"></label>
+            <p class="help" data-i18n="settings.effect.help"></p>
+            <div class="effect-grid" id="effects"></div>
+          </div>
+
+          <div class="field">
+            <label data-i18n="settings.accent"></label>
+            <div class="accents" id="accents"></div>
+          </div>
+
+          <div class="field">
+            <label for="intensity" data-i18n="settings.intensity"></label>
+            <p class="help" data-i18n="settings.intensity.help"></p>
+            <div class="slider-row">
+              <input type="range" id="intensity" min="0.2" max="1" step="0.05" />
+              <output for="intensity" id="intensityOut"></output>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="maxFps" data-i18n="settings.maxFps"></label>
+            <p class="help" data-i18n="settings.maxFps.help"></p>
+            <div class="slider-row">
+              <input type="range" id="maxFps" min="0" max="240" step="10" />
+              <output for="maxFps" id="maxFpsOut"></output>
+            </div>
+          </div>
+
+          <div class="toggles">
+            <label class="switch">
+              <input type="checkbox" id="screenLensing" />
+              <span class="switch-body"><i></i></span>
+              <span class="switch-text">
+                <strong data-i18n="settings.screenLensing"></strong>
+                <small data-i18n="settings.screenLensing.help"></small>
+              </span>
+            </label>
+
+            <label class="switch">
+              <input type="checkbox" id="reducedMotion" />
+              <span class="switch-body"><i></i></span>
+              <span class="switch-text">
+                <strong data-i18n="settings.reducedMotion"></strong>
+                <small data-i18n="settings.reducedMotion.help"></small>
+              </span>
+            </label>
+          </div>
+        </section>
+
+        <!-- ----------------------------------------------------------- break -->
+        <section class="panel" data-panel="break" hidden>
+          <h1 data-i18n="settings.section.break"></h1>
+
+          <div class="field">
+            <label data-i18n="settings.strictness"></label>
+            <p class="help" data-i18n="settings.strictness.help"></p>
+            <div class="choice-grid" id="strictness"></div>
+          </div>
+
+          <div class="field" id="skipArmField">
+            <label for="skipArmSeconds" data-i18n="settings.skipArmSeconds"></label>
+            <p class="help" data-i18n="settings.skipArmSeconds.help"></p>
+            <div class="slider-row">
+              <input type="range" id="skipArmSeconds" min="0" max="60" step="1" />
+              <output for="skipArmSeconds" id="skipArmSecondsOut"></output>
+            </div>
+          </div>
+
+          <div class="toggles">
+            <label class="switch">
+              <input type="checkbox" id="soundEnabled" />
+              <span class="switch-body"><i></i></span>
+              <span class="switch-text">
+                <strong data-i18n="settings.sound"></strong>
+                <small data-i18n="settings.sound.help"></small>
+              </span>
+            </label>
+
+            <label class="switch">
+              <input type="checkbox" id="notifyBeforeBreak" />
+              <span class="switch-body"><i></i></span>
+              <span class="switch-text">
+                <strong data-i18n="settings.notifyBeforeBreak"></strong>
+                <small data-i18n="settings.notifyBeforeBreak.help"></small>
+              </span>
+            </label>
+          </div>
+        </section>
+
+        <!-- -------------------------------------------------------- language -->
+        <section class="panel" data-panel="language" hidden>
+          <h1 data-i18n="settings.section.language"></h1>
+          <p class="help" data-i18n="settings.language.help"></p>
+
+          <input
+            type="search"
+            id="languageSearch"
+            class="search"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <div class="language-grid" id="languages" role="listbox"></div>
+          <p class="empty" id="languageEmpty" hidden data-i18n="settings.language.noResults"></p>
+        </section>
+
+        <!-- ---------------------------------------------------------- system -->
+        <section class="panel" data-panel="system" hidden>
+          <h1 data-i18n="settings.section.system"></h1>
+
+          <div class="toggles">
+            <label class="switch">
+              <input type="checkbox" id="launchAtLogin" />
+              <span class="switch-body"><i></i></span>
+              <span class="switch-text">
+                <strong data-i18n="settings.launchAtLogin"></strong>
+                <small data-i18n="settings.launchAtLogin.help"></small>
+              </span>
+            </label>
+
+            <label class="switch">
+              <input type="checkbox" id="checkForUpdates" />
+              <span class="switch-body"><i></i></span>
+              <span class="switch-text">
+                <strong data-i18n="settings.checkForUpdates"></strong>
+                <small data-i18n="settings.checkForUpdates.help"></small>
+              </span>
+            </label>
+          </div>
+        </section>
+
+        <!-- ----------------------------------------------------------- about -->
+        <section class="panel" data-panel="about" hidden>
+          <h1 data-i18n="settings.section.about"></h1>
+
+          <div class="about-head">
+            <span class="brand-mark large" aria-hidden="true"></span>
+            <div>
+              <h2>BlackHolock</h2>
+              <p class="motto" data-i18n="app.motto"></p>
+              <p class="muted" id="aboutVersion"></p>
+              <p class="muted" id="aboutPlatform"></p>
+            </div>
+          </div>
+
+          <div class="pledge">
+            <strong data-i18n="about.privacyPledge"></strong>
+          </div>
+
+          <div class="about-actions">
+            <button id="checkUpdates" class="primary" data-i18n="about.checkNow"></button>
+            <span id="updateStatus" class="update-status"></span>
+          </div>
+
+          <ul class="links">
+            <li><a href="#" data-link="repository" data-i18n="about.sourceCode"></a></li>
+            <li><a href="#" data-link="releases" data-i18n="about.releaseNotes"></a></li>
+            <li><a href="#" data-link="privacy" data-i18n="about.privacy"></a></li>
+            <li><a href="#" data-link="terms" data-i18n="about.terms"></a></li>
+            <li><a href="#" data-link="licence" data-i18n="about.licence"></a></li>
+          </ul>
+        </section>
+      </main>
+    </div>
+
+    <div id="toast" class="toast" role="status"></div>
+
+    <script type="module" src="./settings.ts"></script>
+  </body>
+</html>

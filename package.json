@@ -1,0 +1,29 @@
+{
+  "name": "blackholock",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A focus timer with a gravitational deadline — a black hole grows on your screen until you take your break.",
+  "license": "MIT",
+  "workspaces": [
+    "packages/core",
+    "packages/visuals",
+    "packages/desktop"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace @blackholock/desktop",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "tsc --build --force",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "eslint packages --ext .ts,.tsx",
+    "dist": "npm run build && npm run dist --workspace @blackholock/desktop",
+    "brand:icons": "node scripts/generate-icons.mjs",
+    "i18n:check": "node scripts/check-locales.mjs"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

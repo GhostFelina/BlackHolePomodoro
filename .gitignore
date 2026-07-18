@@ -1,0 +1,10 @@
+node_modules/
+dist/
+out/
+release/
+*.log
+.DS_Store
+.preview/
+packages/*/dist/
+packages/*/out/
+packages/*/tsconfig.tsbuildinfo
