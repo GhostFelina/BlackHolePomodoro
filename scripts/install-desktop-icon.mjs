@@ -79,17 +79,17 @@ function main() {
     }
   }
 
-  try {
-    // A Finder alias: keeps working if the app is later moved or replaced.
-    execFileSync('osascript', [
-      '-e',
-      `tell application "Finder" to make alias file to POSIX file "${appPath}" at POSIX file "${desktop}"`,
-    ]);
-    console.log(`✓ Alias created on the Desktop → ${appPath}`);
-  } catch {
-    symlinkSync(appPath, join(desktop, APP_NAME));
-    console.log(`✓ Symlink created on the Desktop → ${appPath}`);
-  }
+  // A symlink named BlackHolock.app, not a Finder alias.
+  //
+  // Finder names aliases itself and appends a number when it believes the name
+  // is taken — and it always is here, because the source checkout on this
+  // Desktop is a folder called BlackHolock. Renaming the result afterwards
+  // fails for the same reason. A symlink takes the name it is given, shows the
+  // app's own icon in Finder, and opens the app when double-clicked, so there
+  // is nothing to gain from the alias and a collision to lose.
+  const link = join(desktop, APP_NAME);
+  symlinkSync(appPath, link);
+  console.log(`✓ Desktop icon → ${appPath}`);
 }
 
 main();
