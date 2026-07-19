@@ -9,7 +9,8 @@
  * moved on. Installing to a stable location and pointing the alias there makes
  * "the icon on my Desktop" mean "the current build", always.
  */
-import { cpSync, existsSync, rmSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { existsSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -27,5 +28,16 @@ if (!existsSync(built)) {
 }
 
 rmSync(installed, { recursive: true, force: true });
-cpSync(built, installed, { recursive: true });
+
+// ditto, not cpSync.
+//
+// An Electron bundle is held together by symlinks — Frameworks/…/Versions/
+// Current pointing at A, and so on — and Node's recursive copy does not
+// reproduce them faithfully. The result looked complete (same top-level
+// structure, only 6% smaller) but was missing icudtl.dat, so every launch died
+// with "icudtl.dat not found in bundle" and the app simply never appeared.
+//
+// ditto is macOS's own tool for exactly this: it preserves symlinks, resource
+// forks and extended attributes, and it is what an installer would use.
+execFileSync('ditto', [built, installed]);
 console.log(`✓ Installed → ${installed}`);
