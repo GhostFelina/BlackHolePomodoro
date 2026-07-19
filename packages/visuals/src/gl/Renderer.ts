@@ -49,6 +49,7 @@ const UNIFORM_NAMES = [
   'uDoppler',
   'uStarDensity',
   'uNebula',
+  'uSuction',
   'uStyle',
 ] as const;
 
@@ -449,6 +450,7 @@ export class EffectRenderer {
     if (u.uDoppler) gl.uniform1f(u.uDoppler, p.doppler);
     if (u.uStarDensity) gl.uniform1f(u.uStarDensity, p.starDensity);
     if (u.uNebula) gl.uniform1f(u.uNebula, p.nebula);
+    if (u.uSuction) gl.uniform1f(u.uSuction, p.suction);
     if (u.uStyle) gl.uniform1f(u.uStyle, this.styleId);
 
     gl.drawArrays(gl.TRIANGLES, 0, 3);

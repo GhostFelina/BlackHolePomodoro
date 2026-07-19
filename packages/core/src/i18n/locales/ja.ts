@@ -100,6 +100,8 @@ export const ja: Messages = {
   'settings.inclination': "視点の角度",
   'settings.doppler': "ドップラー効果",
   'settings.doppler.help': "『インターステラー』は円盤を読みやすくするためこれを切りました。0 は映画と同じ、1 は物理的に完全で明確に非対称です。",
+  'settings.suction': '吸い込み',
+  'settings.suction.help': 'ウインドウがホールへ、そしてその周囲へどれだけ強く引き込まれるか。',
   'settings.starDensity': "星の密度",
   'settings.nebula': "銀河と星雲",
   'settings.resetEffect': "ブラックホールをリセット",

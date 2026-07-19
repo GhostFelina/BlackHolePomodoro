@@ -100,6 +100,8 @@ export const ar: Messages = {
   'settings.inclination': "زاوية الرؤية",
   'settings.doppler': "إزاحة دوبلر",
   'settings.doppler.help': "أوقف فيلم إنترستيلر هذا كي يُقرأ القرص بوضوح. القيمة 0 تطابق الفيلم، و1 مكتملة فيزيائيًا وغير متناظرة بوضوح.",
+  'settings.suction': 'الشفط',
+  'settings.suction.help': 'مدى قوة سحب نوافذك إلى داخل الثقب وحوله.',
   'settings.starDensity': "كثافة النجوم",
   'settings.nebula': "المجرة والسديم",
   'settings.resetEffect': "إعادة ضبط الثقب الأسود",

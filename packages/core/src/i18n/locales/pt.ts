@@ -101,6 +101,8 @@ export const pt: Messages = {
   'settings.inclination': "Ângulo de visão",
   'settings.doppler': "Efeito Doppler",
   'settings.doppler.help': "O Interstellar desligou isto para o disco ficar legível. 0 corresponde ao filme; 1 é fisicamente completo e visivelmente assimétrico.",
+  'settings.suction': 'Sucção',
+  'settings.suction.help': 'Com que força suas janelas são arrastadas para dentro e ao redor do buraco.',
   'settings.starDensity': "Densidade de estrelas",
   'settings.nebula': "Galáxia e nebulosa",
   'settings.resetEffect': "Redefinir o buraco negro",

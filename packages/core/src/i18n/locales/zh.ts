@@ -99,6 +99,8 @@ export const zh: Messages = {
   'settings.inclination': "观察角度",
   'settings.doppler': "多普勒效应",
   'settings.doppler.help': "《星际穿越》关闭了它，好让吸积盘看得清楚。0 与电影一致；1 在物理上完整，但明显偏向一侧。",
+  'settings.suction': '吸力',
+  'settings.suction.help': '窗口被拖入黑洞及其周围的强度。',
   'settings.starDensity': "恒星密度",
   'settings.nebula': "星系与星云",
   'settings.resetEffect': "重置黑洞",

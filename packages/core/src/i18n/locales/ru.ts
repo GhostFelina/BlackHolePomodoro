@@ -101,6 +101,8 @@ export const ru: Messages = {
   'settings.inclination': "Угол обзора",
   'settings.doppler': "Эффект Доплера",
   'settings.doppler.help': "В «Интерстелларе» это отключили, чтобы диск читался ясно. 0 — как в фильме; 1 — физически полно и заметно несимметрично.",
+  'settings.suction': 'Затягивание',
+  'settings.suction.help': 'Насколько сильно окна затягивает внутрь и вокруг дыры.',
   'settings.starDensity': "Плотность звёзд",
   'settings.nebula': "Галактика и туманность",
   'settings.resetEffect': "Сбросить чёрную дыру",

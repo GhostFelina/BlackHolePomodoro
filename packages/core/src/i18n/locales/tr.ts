@@ -100,6 +100,8 @@ export const tr: Messages = {
   'settings.inclination': "Bakış açısı",
   'settings.doppler': "Doppler kayması",
   'settings.doppler.help': "Interstellar bunu kapattı ki disk net okunsun. 0 filmle aynı; 1 fiziksel olarak eksiksiz ve gözle görülür biçimde yamuk.",
+  'settings.suction': 'Emme',
+  'settings.suction.help': 'Pencerelerinin deliğin içine ve çevresine ne kadar sert çekileceği.',
   'settings.starDensity': "Yıldız yoğunluğu",
   'settings.nebula': "Galaksi ve bulutsu",
   'settings.resetEffect': "Kara deliği sıfırla",

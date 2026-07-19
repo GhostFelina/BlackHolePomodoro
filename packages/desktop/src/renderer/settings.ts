@@ -317,6 +317,7 @@ const EFFECT_SLIDERS = [
   { id: 'discSpeed', format: (v: number) => `${v.toFixed(1)}×` },
   { id: 'inclination', format: (v: number) => `${v.toFixed(1)}°` },
   { id: 'doppler', format: (v: number) => `${Math.round(v * 100)} %` },
+  { id: 'suction', format: (v: number) => `${Math.round(v * 100)} %` },
   { id: 'starDensity', format: (v: number) => `${Math.round(v * 100)} %` },
   { id: 'nebula', format: (v: number) => `${Math.round(v * 100)} %` },
 ] as const;
@@ -370,7 +371,7 @@ function setupControls(): void {
   $id('resetEffect').addEventListener('click', () => {
     void patch({
       bloom: 1, discBrightness: 1, discSpeed: 1,
-      inclination: 3.2, doppler: 0.12, starDensity: 1, nebula: 1,
+      inclination: 3.2, doppler: 0.12, starDensity: 1, nebula: 1, suction: 1,
     });
   });
 

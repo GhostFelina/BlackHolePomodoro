@@ -101,6 +101,8 @@ export const en: Messages = {
   'settings.inclination': "Viewing angle",
   'settings.doppler': "Doppler shift",
   'settings.doppler.help': "Interstellar switched this off so the disc would read clearly. 0 matches the film; 1 is physically complete and visibly lopsided.",
+  'settings.suction': 'Suction',
+  'settings.suction.help': 'How hard your windows are dragged in and around the hole.',
   'settings.starDensity': "Star density",
   'settings.nebula': "Galaxy and nebula",
   'settings.resetEffect': "Reset the black hole",

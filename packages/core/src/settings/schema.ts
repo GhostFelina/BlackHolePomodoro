@@ -64,6 +64,8 @@ export interface Settings {
   starDensity: number;
   /** Galaxy and nebula brightness. */
   nebula: number;
+  /** How strongly the desktop is dragged into the hole. 0 disables it. */
+  suction: number;
   /** Skip the growth animation and render a still effect (accessibility). */
   reducedMotion: boolean;
 
@@ -110,6 +112,7 @@ export const DEFAULT_SETTINGS: Settings = Object.freeze({
   doppler: 0.12,
   starDensity: 1,
   nebula: 1,
+  suction: 1,
   reducedMotion: false,
 
   strictness: 'standard',
@@ -136,6 +139,7 @@ export const LIMITS = Object.freeze({
   doppler: { min: 0, max: 1, step: 0.02 },
   starDensity: { min: 0, max: 2, step: 0.05 },
   nebula: { min: 0, max: 2.5, step: 0.05 },
+  suction: { min: 0, max: 2.5, step: 0.05 },
   maxFps: { min: 0, max: 240, step: 10 },
 });
 
@@ -177,6 +181,7 @@ export function sanitizeSettings(input: unknown, base: Settings = DEFAULT_SETTIN
     doppler: num(raw.doppler, base.doppler, LIMITS.doppler, true),
     starDensity: num(raw.starDensity, base.starDensity, LIMITS.starDensity, true),
     nebula: num(raw.nebula, base.nebula, LIMITS.nebula, true),
+    suction: num(raw.suction, base.suction, LIMITS.suction, true),
     reducedMotion: bool(raw.reducedMotion, base.reducedMotion),
 
     strictness: oneOf(raw.strictness, STRICTNESS, base.strictness),
@@ -205,6 +210,7 @@ export function settingsToEffectParams(settings: Settings) {
     doppler: settings.doppler,
     starDensity: settings.starDensity,
     nebula: settings.nebula,
+    suction: settings.suction,
   };
 }
 

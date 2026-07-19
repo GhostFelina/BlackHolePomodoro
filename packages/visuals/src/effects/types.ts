@@ -52,6 +52,8 @@ export interface EffectParams {
   starDensity: number;
   /** Brightness of the nebula and galactic band. */
   nebula: number;
+  /** How strongly the desktop is dragged inward and around the hole. */
+  suction: number;
 }
 
 export const DEFAULT_EFFECT_PARAMS: EffectParams = Object.freeze({
@@ -61,6 +63,7 @@ export const DEFAULT_EFFECT_PARAMS: EffectParams = Object.freeze({
   doppler: 0.12,
   starDensity: 1.0,
   nebula: 1.0,
+  suction: 1.0,
 });
 
 export interface FocusEffect {
@@ -116,6 +119,7 @@ uniform float uInclination;   // degrees
 uniform float uDoppler;
 uniform float uStarDensity;
 uniform float uNebula;
+uniform float uSuction;
 uniform float uStyle;     // selects a variation inside a shared shader
 
 in  vec2 vUv;

@@ -101,6 +101,8 @@ export const de: Messages = {
   'settings.inclination': "Blickwinkel",
   'settings.doppler': "Doppler-Verschiebung",
   'settings.doppler.help': "Interstellar schaltete dies ab, damit die Scheibe klar lesbar bleibt. 0 entspricht dem Film; 1 ist physikalisch vollständig und sichtbar schief.",
+  'settings.suction': 'Sog',
+  'settings.suction.help': 'Wie stark deine Fenster in das Loch und um es herum gezogen werden.',
   'settings.starDensity': "Sterndichte",
   'settings.nebula': "Galaxie und Nebel",
   'settings.resetEffect': "Schwarzes Loch zurücksetzen",

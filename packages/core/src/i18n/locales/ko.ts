@@ -100,6 +100,8 @@ export const ko: Messages = {
   'settings.inclination': "보는 각도",
   'settings.doppler': "도플러 효과",
   'settings.doppler.help': "인터스텔라는 원반이 명확히 보이도록 이것을 껐습니다. 0은 영화와 같고, 1은 물리적으로 완전하며 눈에 띄게 비대칭입니다.",
+  'settings.suction': '흡입',
+  'settings.suction.help': '창이 블랙홀 안쪽과 주위로 얼마나 강하게 끌려드는지.',
   'settings.starDensity': "별 밀도",
   'settings.nebula': "은하와 성운",
   'settings.resetEffect': "블랙홀 초기화",

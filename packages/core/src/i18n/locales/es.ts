@@ -101,6 +101,8 @@ export const es: Messages = {
   'settings.inclination': "Ángulo de visión",
   'settings.doppler': "Efecto Doppler",
   'settings.doppler.help': "Interstellar lo desactivó para que el disco se leyera con claridad. 0 iguala la película; 1 es físicamente completo y visiblemente asimétrico.",
+  'settings.suction': 'Succión',
+  'settings.suction.help': 'Con qué fuerza tus ventanas son arrastradas hacia el agujero y a su alrededor.',
   'settings.starDensity': "Densidad de estrellas",
   'settings.nebula': "Galaxia y nebulosa",
   'settings.resetEffect': "Restablecer el agujero negro",

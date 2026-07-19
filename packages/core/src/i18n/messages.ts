@@ -117,6 +117,8 @@ export interface Messages {
   'settings.inclination': string;
   'settings.doppler': string;
   'settings.doppler.help': string;
+  'settings.suction': string;
+  'settings.suction.help': string;
   'settings.starDensity': string;
   'settings.nebula': string;
   'settings.resetEffect': string;
