@@ -160,6 +160,8 @@ export const es: Messages = {
   'effect.rain.description': 'Las gotas se acumulan en el cristal hasta que la pantalla ya no merece leerse.',
   'effect.snow.name': 'Nieve',
   'effect.snow.description': 'Un manto se acumula desde abajo hasta enterrar tu trabajo.',
+  'effect.flood.name': 'Inundación',
+  'effect.flood.description': 'El agua sube por la pantalla hasta dejar tu trabajo debajo.',
   'effect.eclipse.name': 'Eclipse',
   'effect.eclipse.description': 'Un disco oscuro y sereno con una corona fina. Mínimo y silencioso.',
   'effect.voidfield.name': 'Campo Vacío',

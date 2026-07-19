@@ -160,6 +160,8 @@ export const ru: Messages = {
   'effect.rain.description': 'Капли собираются на стекле, пока экран не перестанет стоить чтения.',
   'effect.snow.name': 'Снег',
   'effect.snow.description': 'Сугроб растёт снизу, пока не похоронит твою работу.',
+  'effect.flood.name': 'Потоп',
+  'effect.flood.description': 'Вода поднимается по экрану, пока работа не окажется под ней.',
   'effect.eclipse.name': 'Затмение',
   'effect.eclipse.description': 'Спокойный тёмный диск с тонкой короной. Минимально и тихо.',
   'effect.voidfield.name': 'Поле Пустоты',

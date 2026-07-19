@@ -158,6 +158,8 @@ export const tr: Messages = {
   'effect.rain.description': 'Camda biriken damlalar ekranı okumaya değmez hâle getirir.',
   'effect.snow.name': 'Kar',
   'effect.snow.description': 'Ekranın altından yükselen kar, işini gömene kadar birikir.',
+  'effect.flood.name': 'Sel',
+  'effect.flood.description': 'Su ekranda yükselir ve işini altında bırakır.',
   'effect.eclipse.name': 'Tutulma',
   'effect.eclipse.description': 'İnce bir taçla çevrili sakin, karanlık bir disk. Sade ve sessiz.',
   'effect.voidfield.name': 'Boşluk Alanı',

@@ -160,6 +160,8 @@ export const de: Messages = {
   'effect.rain.description': 'Tropfen sammeln sich auf dem Glas, bis der Bildschirm nicht mehr lesenswert ist.',
   'effect.snow.name': 'Schnee',
   'effect.snow.description': 'Eine Wehe wächst vom unteren Rand, bis deine Arbeit begraben ist.',
+  'effect.flood.name': 'Flut',
+  'effect.flood.description': 'Das Wasser steigt den Bildschirm hinauf, bis deine Arbeit darunter liegt.',
   'effect.eclipse.name': 'Eklipse',
   'effect.eclipse.description': 'Eine ruhige dunkle Scheibe mit dünner Korona. Minimal und still.',
   'effect.voidfield.name': 'Leerfeld',

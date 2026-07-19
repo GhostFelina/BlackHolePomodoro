@@ -156,6 +156,8 @@ export const zh: Messages = {
   'effect.rain.description': '水珠在玻璃上聚积，直到屏幕不再值得阅读。',
   'effect.snow.name': '雪',
   'effect.snow.description': '积雪自屏幕底部堆起，直到埋没你的工作。',
+  'effect.flood.name': '洪水',
+  'effect.flood.description': '水位沿屏幕上涨，直到你的工作没入水下。',
   'effect.eclipse.name': '日食',
   'effect.eclipse.description': '一个安静的暗色圆盘，外缘一圈细日冕。极简而沉静。',
   'effect.voidfield.name': '虚空场',

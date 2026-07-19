@@ -160,6 +160,8 @@ export const en: Messages = {
   'effect.rain.description': 'Droplets gather on the glass until the screen is no longer worth reading.',
   'effect.snow.name': 'Snow',
   'effect.snow.description': 'A drift builds from the bottom of the screen until your work is buried.',
+  'effect.flood.name': 'Flood',
+  'effect.flood.description': 'The water rises up the screen until your work is under it.',
   'effect.eclipse.name': 'Eclipse',
   'effect.eclipse.description': 'A calm dark disc with a thin corona. Minimal and quiet.',
   'effect.voidfield.name': 'Void Field',

@@ -159,6 +159,8 @@ export const ja: Messages = {
   'effect.rain.description': 'ガラスに雫がたまり、やがて画面は読む価値をなくします。',
   'effect.snow.name': '雪',
   'effect.snow.description': '画面の下から吹きだまりが積もり、やがて作業を埋めてしまいます。',
+  'effect.flood.name': '洪水',
+  'effect.flood.description': '水位が画面をせり上がり、やがて作業は水面下に沈みます。',
   'effect.eclipse.name': 'イクリプス',
   'effect.eclipse.description': '細いコロナをまとった静かな暗い円盤。最小限で物静か。',
   'effect.voidfield.name': 'ヴォイドフィールド',

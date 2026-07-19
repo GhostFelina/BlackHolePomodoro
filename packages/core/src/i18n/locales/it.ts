@@ -160,6 +160,8 @@ export const it: Messages = {
   'effect.rain.description': 'Le gocce si raccolgono sul vetro finché lo schermo non vale più la pena di leggerlo.',
   'effect.snow.name': 'Neve',
   'effect.snow.description': 'Un cumulo cresce dal basso finché il tuo lavoro non è sepolto.',
+  'effect.flood.name': 'Alluvione',
+  'effect.flood.description': 'L’acqua sale lungo lo schermo finché il tuo lavoro non è sommerso.',
   'effect.eclipse.name': 'Eclissi',
   'effect.eclipse.description': 'Un disco scuro e calmo con una corona sottile. Minimale e silenzioso.',
   'effect.voidfield.name': 'Campo Vuoto',
