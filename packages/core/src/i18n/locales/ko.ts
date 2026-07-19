@@ -157,6 +157,8 @@ export const ko: Messages = {
   'effect.prism.description': '지평선 곁을 휘어 지나며 무지개 띠로 갈라지는 빛.',
   'effect.rain.name': '비',
   'effect.rain.description': '유리에 물방울이 맺혀 화면이 더는 읽을 만하지 않게 됩니다.',
+  'effect.snow.name': '눈',
+  'effect.snow.description': '화면 아래에서 눈이 쌓여 올라와 결국 작업을 덮어버립니다.',
   'effect.eclipse.name': '이클립스',
   'effect.eclipse.description': '얇은 코로나를 두른 고요한 어두운 원반. 최소한이고 조용합니다.',
   'effect.voidfield.name': '보이드 필드',

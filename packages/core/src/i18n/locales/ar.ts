@@ -157,6 +157,8 @@ export const ar: Messages = {
   'effect.prism.description': 'ضوء ينشطر إلى أشرطة قوس قزح وهو ينحني قرب الأفق.',
   'effect.rain.name': 'مطر',
   'effect.rain.description': 'تتجمّع القطرات على الزجاج حتى لا تعود الشاشة تستحق القراءة.',
+  'effect.snow.name': 'ثلج',
+  'effect.snow.description': 'يتراكم الثلج من أسفل الشاشة حتى يدفن عملك.',
   'effect.eclipse.name': 'كسوف',
   'effect.eclipse.description': 'قرص مظلم هادئ بهالة رفيعة. بسيط وصامت.',
   'effect.voidfield.name': 'حقل الفراغ',

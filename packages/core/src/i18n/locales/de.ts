@@ -158,6 +158,8 @@ export const de: Messages = {
   'effect.prism.description': 'Licht, das beim Umbiegen am Horizont in Regenbogenbänder zerfällt.',
   'effect.rain.name': 'Regen',
   'effect.rain.description': 'Tropfen sammeln sich auf dem Glas, bis der Bildschirm nicht mehr lesenswert ist.',
+  'effect.snow.name': 'Schnee',
+  'effect.snow.description': 'Eine Wehe wächst vom unteren Rand, bis deine Arbeit begraben ist.',
   'effect.eclipse.name': 'Eklipse',
   'effect.eclipse.description': 'Eine ruhige dunkle Scheibe mit dünner Korona. Minimal und still.',
   'effect.voidfield.name': 'Leerfeld',

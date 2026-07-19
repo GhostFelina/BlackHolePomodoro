@@ -158,6 +158,8 @@ export const es: Messages = {
   'effect.prism.description': 'La luz dividida en bandas de arcoíris al curvarse junto al horizonte.',
   'effect.rain.name': 'Lluvia',
   'effect.rain.description': 'Las gotas se acumulan en el cristal hasta que la pantalla ya no merece leerse.',
+  'effect.snow.name': 'Nieve',
+  'effect.snow.description': 'Un manto se acumula desde abajo hasta enterrar tu trabajo.',
   'effect.eclipse.name': 'Eclipse',
   'effect.eclipse.description': 'Un disco oscuro y sereno con una corona fina. Mínimo y silencioso.',
   'effect.voidfield.name': 'Campo Vacío',

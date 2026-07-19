@@ -156,6 +156,8 @@ export const tr: Messages = {
   'effect.prism.description': 'Ufkun yanından bükülürken gökkuşağı bantlarına ayrılan ışık.',
   'effect.rain.name': 'Yağmur',
   'effect.rain.description': 'Camda biriken damlalar ekranı okumaya değmez hâle getirir.',
+  'effect.snow.name': 'Kar',
+  'effect.snow.description': 'Ekranın altından yükselen kar, işini gömene kadar birikir.',
   'effect.eclipse.name': 'Tutulma',
   'effect.eclipse.description': 'İnce bir taçla çevrili sakin, karanlık bir disk. Sade ve sessiz.',
   'effect.voidfield.name': 'Boşluk Alanı',

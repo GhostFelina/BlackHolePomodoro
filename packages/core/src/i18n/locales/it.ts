@@ -158,6 +158,8 @@ export const it: Messages = {
   'effect.prism.description': 'Luce scomposta in bande arcobaleno mentre si curva oltre l’orizzonte.',
   'effect.rain.name': 'Pioggia',
   'effect.rain.description': 'Le gocce si raccolgono sul vetro finché lo schermo non vale più la pena di leggerlo.',
+  'effect.snow.name': 'Neve',
+  'effect.snow.description': 'Un cumulo cresce dal basso finché il tuo lavoro non è sepolto.',
   'effect.eclipse.name': 'Eclissi',
   'effect.eclipse.description': 'Un disco scuro e calmo con una corona sottile. Minimale e silenzioso.',
   'effect.voidfield.name': 'Campo Vuoto',

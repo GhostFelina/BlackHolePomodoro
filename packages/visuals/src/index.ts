@@ -26,4 +26,5 @@ export {
 export { gargantua, halo, inferno, prism } from './effects/gargantua.js';
 export { eclipse } from './effects/eclipse.js';
 export { rain } from './effects/rain.js';
+export { snow } from './effects/snow.js';
 export { voidfield } from './effects/voidfield.js';

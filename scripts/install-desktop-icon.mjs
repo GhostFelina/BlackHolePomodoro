@@ -15,7 +15,7 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { existsSync, lstatSync, symlinkSync, unlinkSync } from 'node:fs';
+import { existsSync, lstatSync, readdirSync, rmSync, symlinkSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -24,6 +24,9 @@ const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, '..');
 const APP_NAME = 'BlackHolock.app';
 
+// /Applications first on purpose: an alias into the repo's release folder
+// breaks the moment that folder is rebuilt or cleaned, which is exactly how
+// the Desktop ended up pointing at a stale build.
 const candidates = [
   join('/Applications', APP_NAME),
   join(homedir(), 'Applications', APP_NAME),
@@ -54,12 +57,25 @@ function main() {
   const desktop = join(homedir(), 'Desktop');
   const target = join(desktop, 'BlackHolock');
 
-  // Remove any previous alias or link so this is idempotent.
-  for (const path of [target, `${target}.app`, join(desktop, APP_NAME)]) {
+  // Remove every previous alias before making a new one.
+  //
+  // The first version of this only checked three exact names, so Finder's
+  // automatic de-duplication ("BlackHolock alias 2") slipped past it and the
+  // Desktop accumulated aliases — each one pointing at whichever build existed
+  // when it was made. Opening the wrong one launched a stale app that looked
+  // like the project had regressed. Anything matching the name is cleared now.
+  for (const entry of readdirSync(desktop)) {
+    if (!entry.startsWith('BlackHolock')) continue;
+    const path = join(desktop, entry);
     try {
-      if (existsSync(path) || lstatSync(path)) unlinkSync(path);
+      // Only ever remove aliases and links, never a real directory — the
+      // source checkout itself lives on the Desktop and must survive this.
+      const stat = lstatSync(path);
+      if (stat.isDirectory() && !entry.endsWith('.app')) continue;
+      rmSync(path, { recursive: true, force: true });
+      console.log(`  removed stale ${entry}`);
     } catch {
-      /* nothing there, or a real directory we should not touch */
+      /* not ours to delete */
     }
   }
 

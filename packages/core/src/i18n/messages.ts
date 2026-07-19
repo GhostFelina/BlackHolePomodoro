@@ -177,6 +177,8 @@ export interface Messages {
   'effect.prism.description': string;
   'effect.rain.name': string;
   'effect.rain.description': string;
+  'effect.snow.name': string;
+  'effect.snow.description': string;
   'effect.eclipse.name': string;
   'effect.eclipse.description': string;
   'effect.voidfield.name': string;
