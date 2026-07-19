@@ -4,6 +4,7 @@ import { eclipse } from './eclipse.js';
 import { rain } from './rain.js';
 import { snow } from './snow.js';
 import { flood } from './flood.js';
+import { quake } from './quake.js';
 import { voidfield } from './voidfield.js';
 
 /**
@@ -16,7 +17,7 @@ import { voidfield } from './voidfield.js';
 const registry = new Map<string, FocusEffect>();
 
 export const BUILT_IN: readonly FocusEffect[] = [
-  gargantua, inferno, halo, prism, rain, snow, flood, eclipse, voidfield,
+  gargantua, inferno, halo, prism, rain, snow, flood, quake, eclipse, voidfield,
 ];
 
 for (const effect of BUILT_IN) registry.set(effect.id, effect);

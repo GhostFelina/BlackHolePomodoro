@@ -162,6 +162,8 @@ export const ru: Messages = {
   'effect.snow.description': 'Сугроб растёт снизу, пока не похоронит твою работу.',
   'effect.flood.name': 'Потоп',
   'effect.flood.description': 'Вода поднимается по экрану, пока работа не окажется под ней.',
+  'effect.quake.name': 'Землетрясение',
+  'effect.quake.description': 'По экрану расходятся трещины, и осколки перестают совпадать.',
   'effect.eclipse.name': 'Затмение',
   'effect.eclipse.description': 'Спокойный тёмный диск с тонкой короной. Минимально и тихо.',
   'effect.voidfield.name': 'Поле Пустоты',

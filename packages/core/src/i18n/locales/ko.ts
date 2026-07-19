@@ -161,6 +161,8 @@ export const ko: Messages = {
   'effect.snow.description': '화면 아래에서 눈이 쌓여 올라와 결국 작업을 덮어버립니다.',
   'effect.flood.name': '범람',
   'effect.flood.description': '물이 화면을 타고 차올라 작업을 잠기게 합니다.',
+  'effect.quake.name': '지진',
+  'effect.quake.description': '화면에 균열이 번지고 조각들이 어긋나기 시작합니다.',
   'effect.eclipse.name': '이클립스',
   'effect.eclipse.description': '얇은 코로나를 두른 고요한 어두운 원반. 최소한이고 조용합니다.',
   'effect.voidfield.name': '보이드 필드',

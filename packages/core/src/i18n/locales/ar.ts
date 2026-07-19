@@ -161,6 +161,8 @@ export const ar: Messages = {
   'effect.snow.description': 'يتراكم الثلج من أسفل الشاشة حتى يدفن عملك.',
   'effect.flood.name': 'فيضان',
   'effect.flood.description': 'يرتفع الماء على الشاشة حتى يغمر عملك.',
+  'effect.quake.name': 'زلزال',
+  'effect.quake.description': 'تنتشر الشقوق عبر الشاشة فتتوقف الشظايا عن التطابق.',
   'effect.eclipse.name': 'كسوف',
   'effect.eclipse.description': 'قرص مظلم هادئ بهالة رفيعة. بسيط وصامت.',
   'effect.voidfield.name': 'حقل الفراغ',

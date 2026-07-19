@@ -162,6 +162,8 @@ export const pt: Messages = {
   'effect.snow.description': 'Uma camada sobe da base da tela até enterrar o seu trabalho.',
   'effect.flood.name': 'Enchente',
   'effect.flood.description': 'A água sobe pela tela até deixar o seu trabalho submerso.',
+  'effect.quake.name': 'Terremoto',
+  'effect.quake.description': 'Rachaduras se espalham pela tela e os cacos deixam de se alinhar.',
   'effect.eclipse.name': 'Eclipse',
   'effect.eclipse.description': 'Um disco escuro e calmo com uma coroa fina. Mínimo e silencioso.',
   'effect.voidfield.name': 'Campo Vazio',

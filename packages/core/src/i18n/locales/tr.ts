@@ -160,6 +160,8 @@ export const tr: Messages = {
   'effect.snow.description': 'Ekranın altından yükselen kar, işini gömene kadar birikir.',
   'effect.flood.name': 'Sel',
   'effect.flood.description': 'Su ekranda yükselir ve işini altında bırakır.',
+  'effect.quake.name': 'Deprem',
+  'effect.quake.description': 'Ekranda çatlaklar yayılır ve parçalar birbirini tutmaz olur.',
   'effect.eclipse.name': 'Tutulma',
   'effect.eclipse.description': 'İnce bir taçla çevrili sakin, karanlık bir disk. Sade ve sessiz.',
   'effect.voidfield.name': 'Boşluk Alanı',

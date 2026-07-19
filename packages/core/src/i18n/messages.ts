@@ -181,6 +181,8 @@ export interface Messages {
   'effect.snow.description': string;
   'effect.flood.name': string;
   'effect.flood.description': string;
+  'effect.quake.name': string;
+  'effect.quake.description': string;
   'effect.eclipse.name': string;
   'effect.eclipse.description': string;
   'effect.voidfield.name': string;

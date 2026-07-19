@@ -162,6 +162,8 @@ export const de: Messages = {
   'effect.snow.description': 'Eine Wehe wächst vom unteren Rand, bis deine Arbeit begraben ist.',
   'effect.flood.name': 'Flut',
   'effect.flood.description': 'Das Wasser steigt den Bildschirm hinauf, bis deine Arbeit darunter liegt.',
+  'effect.quake.name': 'Beben',
+  'effect.quake.description': 'Risse ziehen sich über den Bildschirm und die Stücke passen nicht mehr zusammen.',
   'effect.eclipse.name': 'Eklipse',
   'effect.eclipse.description': 'Eine ruhige dunkle Scheibe mit dünner Korona. Minimal und still.',
   'effect.voidfield.name': 'Leerfeld',
