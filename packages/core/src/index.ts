@@ -11,6 +11,7 @@ export {
 } from './engine/FocusEngine.js';
 
 export {
+  ACCENT_ORDER,
   DEFAULT_SETTINGS,
   LIMITS,
   SETTINGS_VERSION,

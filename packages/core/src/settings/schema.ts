@@ -7,7 +7,16 @@
 
 import { LOCALE_CODES, type LocaleCode } from '../i18n/locales.js';
 
-export type ThemeAccent = 'ember' | 'ion' | 'aurora' | 'monochrome';
+export type ThemeAccent =
+  | 'ember'
+  | 'solar'
+  | 'gold'
+  | 'rust'
+  | 'crimson'
+  | 'ion'
+  | 'aurora'
+  | 'violet'
+  | 'monochrome';
 export type BreakStrictness = 'gentle' | 'standard' | 'strict';
 
 export interface Settings {
@@ -130,7 +139,12 @@ export const LIMITS = Object.freeze({
   maxFps: { min: 0, max: 240, step: 10 },
 });
 
-const ACCENTS: readonly ThemeAccent[] = ['ember', 'ion', 'aurora', 'monochrome'];
+const ACCENTS: readonly ThemeAccent[] = [
+  'ember', 'solar', 'gold', 'rust', 'crimson', 'ion', 'aurora', 'violet', 'monochrome',
+];
+
+/** Exposed so the settings panel renders swatches in this exact order. */
+export const ACCENT_ORDER = ACCENTS;
 const STRICTNESS: readonly BreakStrictness[] = ['gentle', 'standard', 'strict'];
 
 /**

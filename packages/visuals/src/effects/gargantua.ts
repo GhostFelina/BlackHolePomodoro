@@ -81,13 +81,27 @@ float warpedFbm(vec2 p) {
   return fbm(p + 4.0 * r);
 }
 
-// Emission colour across the disc. Cream and white rather than saturated
-// orange: the film's disc reads as hot metal, not fire.
+// Emission colour across the disc.
+//
+// The accent tints the *outer* material only. That is not an arbitrary choice:
+// disc temperature rises steeply inward, and anything hot enough to sit near
+// the inner edge radiates essentially white whatever its composition. Letting
+// the accent reach the core would make the whole disc read as coloured plastic
+// rather than as something incandescent, so the core is pinned near white and
+// the accent owns the cooler rim where colour is physically plausible.
 vec3 discColour(float t) {
-  vec3 rim   = vec3(1.00, 0.68, 0.34);   // outer, coolest
-  vec3 mid   = vec3(1.00, 0.86, 0.60);
-  vec3 core  = vec3(1.00, 0.97, 0.90);   // inner, near white
-  return t < 0.55 ? mix(rim, mid, t / 0.55) : mix(mid, core, (t - 0.55) / 0.45);
+  // Four stops, not three. Reference frames of Gargantua darken through tan
+  // into a deep rust at the outermost material rather than holding one
+  // saturated hue to the edge, and that falloff is a large part of why the
+  // disc reads as something with depth instead of a coloured ribbon.
+  vec3 outer = uAccent * vec3(0.42, 0.30, 0.22);              // far edge, dim and brown
+  vec3 rim   = uAccent;
+  vec3 mid   = mix(uAccent, vec3(1.00, 0.90, 0.74), 0.58);
+  vec3 core  = mix(vec3(1.00, 0.98, 0.93), uAccent, 0.07);    // near white
+
+  if (t < 0.26) return mix(outer, rim, t / 0.26);
+  if (t < 0.62) return mix(rim, mid, (t - 0.26) / 0.36);
+  return mix(mid, core, (t - 0.62) / 0.38);
 }
 
 
@@ -255,15 +269,22 @@ void main() {
       float sw    = phi + spin * omega * 34.0;
 
       // Two scales of filament: broad streams, then fine structure inside them.
-      vec2  uvA = vec2(sw * 0.85, rd * 0.42);
-      vec2  uvB = vec2(sw * 3.10, rd * 1.55);
-      // Ridged noise rather than plain fbm: taking |2n-1| and inverting it
-      // turns smooth hills into creases, which is what gives an accretion disc
-      // its defined lanes instead of a uniform fog.
-      float base   = warpedFbm(uvA);
-      float ridge  = 1.0 - abs(2.0 * fbm(uvB) - 1.0);
-      float fil    = base * 0.60 + ridge * ridge * 0.40;
-      fil = 0.10 + 2.05 * fil * fil;
+      // Anisotropic sampling: the noise is stretched hard along the direction
+      // of orbit and compressed across it, which is what turns mottling into
+      // the long drawn-out wisps the reference frames show. Isotropic noise
+      // can never look like flowing material however many octaves it has.
+      vec2  uvA = vec2(sw * 0.55, rd * 0.72);
+      vec2  uvB = vec2(sw * 2.10, rd * 2.60);
+      vec2  uvC = vec2(sw * 6.40, rd * 5.10);
+
+      float base  = warpedFbm(uvA);
+      float ridge = 1.0 - abs(2.0 * fbm(uvB) - 1.0);
+      float fine  = 1.0 - abs(2.0 * fbm(uvC) - 1.0);
+
+      float fil = base * 0.46 + ridge * ridge * 0.36 + fine * fine * 0.18;
+      // Steeper than square: widens the dark gaps between streams so the
+      // bright ones read as distinct strands.
+      fil = 0.06 + 2.45 * fil * fil * fil;
 
       // Radial brightness: bright inner rim falling off outward.
       float profile = pow(1.0 - t, 1.9);
@@ -331,7 +352,7 @@ void main() {
   // is reinforced here rather than left to emerge from the march alone.
   float ringR = rs * 1.005;
   float ring  = exp(-pow((rPix - ringR) / (rs * 0.028), 2.0));
-  disc += vec3(1.00, 0.95, 0.86) * ring * 0.26;
+  disc += mix(vec3(1.00, 0.95, 0.86), uAccent, 0.18) * ring * 0.26;
 
   disc     *= lensStrength;
   captured *= lensStrength;
@@ -344,8 +365,11 @@ void main() {
   // Reinhard roll-off. Without it the disc clips to flat white and every
   // filament in it is lost; the coefficient is tuned so the inner rim still
   // blooms but structure survives all the way into the brightest part.
-  color = color / (1.0 + color * 0.80);
-  color *= 1.62;
+  // A gentler denominator lets the brightest material run further before it
+  // compresses, which widens the gap between the blown-out core of a stream
+  // and the dark lane beside it — the high contrast the reference frames have.
+  color = color / (1.0 + color * 0.62);
+  color *= 1.74;
 
   float discLum = clamp(dot(disc, vec3(0.30, 0.59, 0.11)) * 2.6, 0.0, 1.0);
   float cosmos  = smoothstep(0.12, 0.75, uGrowth) * lensStrength;

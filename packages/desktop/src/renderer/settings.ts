@@ -1,4 +1,5 @@
 import {
+  ACCENT_ORDER,
   I18n,
   LOCALES,
   LOCALE_CODES,
@@ -144,12 +145,10 @@ function renderEffects(): void {
   }
 }
 
-const ACCENTS: readonly ThemeAccent[] = ['ember', 'ion', 'aurora', 'monochrome'];
-
 function renderAccents(): void {
   const host = $id('accents');
   host.replaceChildren();
-  for (const accent of ACCENTS) {
+  for (const accent of ACCENT_ORDER) {
     const button = document.createElement('button');
     button.type = 'button';
     button.setAttribute('aria-pressed', String(settings?.accent === accent));

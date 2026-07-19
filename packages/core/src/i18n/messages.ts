@@ -95,6 +95,11 @@ export interface Messages {
   'settings.intensity.help': string;
   'settings.accent': string;
   'settings.accent.ember': string;
+  'settings.accent.solar': string;
+  'settings.accent.gold': string;
+  'settings.accent.rust': string;
+  'settings.accent.crimson': string;
+  'settings.accent.violet': string;
   'settings.accent.ion': string;
   'settings.accent.aurora': string;
   'settings.accent.monochrome': string;
