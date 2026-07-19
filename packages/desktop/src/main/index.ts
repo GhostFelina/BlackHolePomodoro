@@ -78,8 +78,11 @@ class BlackHolock {
     // The overlay must never appear in the Dock or the alt-tab list.
     if (process.platform === 'darwin') app.dock?.hide();
 
+    // The overlay windows are created on the first countdown, not at launch.
+    // A full-screen transparent window at screen-saver level is composited by
+    // the OS over everything else for as long as it exists, so one should not
+    // exist during the 45 minutes when it has nothing to show.
     this.overlay = new OverlayManager(preloadPath, rendererDir, devServerUrl);
-    this.overlay.ensure(this.store.get());
 
     this.buildTray();
     this.registerIpc();

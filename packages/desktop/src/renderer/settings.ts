@@ -462,6 +462,7 @@ function syncControls(): void {
  * The renderer is left running only while the Appearance panel is visible.
  */
 let preview: EffectRenderer | null = null;
+let previewCanvas: HTMLCanvasElement | null = null;
 let previewSize = 0.55;
 let previewRunning = false;
 
@@ -477,6 +478,7 @@ let previewRunning = false;
 function startPreview(): void {
   const canvas = document.getElementById('previewCanvas') as HTMLCanvasElement | null;
   if (!canvas) return;
+  previewCanvas = canvas;
   if (preview) {
     if (!previewRunning) {
       previewRunning = true;
@@ -527,9 +529,12 @@ function stopPreview(): void {
 
 function previewFrame() {
   {
-    if (!preview || !settings) return null;
+    if (!preview || !settings || !previewCanvas) return null;
     const dpr = window.devicePixelRatio || 1;
-    const rect = (canvas.parentElement as HTMLElement).getBoundingClientRect();
+    const parent = previewCanvas.parentElement as HTMLElement | null;
+    if (!parent) return null;
+    const rect = parent.getBoundingClientRect();
+    if (rect.width < 2 || rect.height < 2) return null;
     const [w, h] = preview.resize(rect.width, rect.height, dpr);
 
     const minEdge = Math.min(w, h);

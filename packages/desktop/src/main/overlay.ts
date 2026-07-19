@@ -30,6 +30,7 @@ export class OverlayManager {
   private breakMode = false;
   private lensingEnabled = true;
   private disposed = false;
+  private tearingDown = false;
 
   constructor(
     private readonly preloadPath: string,
@@ -84,8 +85,9 @@ export class OverlayManager {
     win.setContentProtection(this.lensingEnabled);
 
     // A borderless transparent window should never be draggable or reloadable.
+    // Stop the *user* closing the overlay, but never block our own teardown.
     win.on('close', (event) => {
-      if (!this.disposed) event.preventDefault();
+      if (!this.disposed && !this.tearingDown) event.preventDefault();
     });
 
     // A transparent overlay has no devtools of its own in normal use, so its
@@ -131,11 +133,28 @@ export class OverlayManager {
     }
   }
 
+  /**
+   * Hides the overlay and destroys the windows.
+   *
+   * Hiding alone is not enough. A borderless, transparent, screen-saver-level
+   * window is part of the compositor's tree for as long as it exists, and on
+   * macOS keeping one alive across a whole work session was measurably making
+   * the machine feel sluggish. Recreating them takes a few milliseconds at the
+   * start of a countdown, which is a far better trade than paying for them
+   * during the 45 minutes they show nothing.
+   */
   hide(): void {
+    this.tearingDown = true;
     this.setBreakMode(false);
     for (const win of this.windows.values()) {
-      if (!win.isDestroyed()) win.hide();
+      if (!win.isDestroyed()) {
+        win.hide();
+        win.destroy();
+      }
     }
+    this.windows.clear();
+    this.tearingDown = false;
+    this.breakMode = false;
   }
 
   /**

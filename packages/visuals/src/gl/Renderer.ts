@@ -127,6 +127,7 @@ export class EffectRenderer {
   private renderScaleFactor = 1;
   private budgetMs = 11;          // leaves headroom inside a 16.7 ms frame
   private lastAdaptAt = 0;
+  private scaleDirty = false;
 
   constructor(canvas: HTMLCanvasElement, options: RendererOptions = {}) {
     this.canvas = canvas;
@@ -300,7 +301,8 @@ export class EffectRenderer {
     const width = Math.max(1, Math.round(cssWidth * dpr * scale));
     const height = Math.max(1, Math.round(cssHeight * dpr * scale));
 
-    if (this.canvas.width !== width || this.canvas.height !== height) {
+    if (this.canvas.width !== width || this.canvas.height !== height || this.scaleDirty) {
+      this.scaleDirty = false;
       this.canvas.width = width;
       this.canvas.height = height;
       gl.viewport(0, 0, width, height);
@@ -478,8 +480,10 @@ export class EffectRenderer {
     } else if (this.gpuMs < this.budgetMs * 0.55) {
       this.renderScaleFactor = Math.min(1, this.renderScaleFactor * 1.06);
     }
-    // Force the next resize() to rebuild the buffers at the new scale.
-    if (previous !== this.renderScaleFactor) this.canvas.width = 0;
+    // Ask the next resize() to rebuild at the new scale. Setting canvas.width
+    // to 0 would also have worked but leaves one frame at zero width, which
+    // shows up as a flash.
+    if (previous !== this.renderScaleFactor) this.scaleDirty = true;
   }
 
   /** Frame-time target in milliseconds. Lower means softer but smoother. */

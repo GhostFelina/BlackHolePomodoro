@@ -208,7 +208,12 @@ function frame(): ReturnType<Choreographer['frame']> {
   // Capture only while something is actually on screen.
   if (stage === 'hidden') {
     if (captureRequested) stopCapture();
-  } else if (settings?.screenLensing && !captureRequested) {
+    // Nothing to draw. Tear the loop down rather than spinning on a frame
+    // that produces no pixels — see stopRendering().
+    stopRendering();
+    return null;
+  }
+  if (settings?.screenLensing && !captureRequested) {
     void startCapture();
   }
 
@@ -248,6 +253,7 @@ api.engine.onSync((state: EngineSyncState) => {
   const next = engine.snapshot().phase;
   if (next !== previous) {
     choreographer.onPhaseChange(next, previous, performance.now() / 1000);
+    syncRenderLoop();
   }
 });
 
@@ -262,7 +268,43 @@ api.app.onLocaleChanged((locale: LocaleCode) => {
 
 engine.onPhaseChange((next, previous) => {
   choreographer.onPhaseChange(next, previous, performance.now() / 1000);
+  syncRenderLoop();
 });
+
+/**
+ * The render loop only exists while there is something to draw.
+ *
+ * It used to start at launch and run for the whole session. For the 45 minutes
+ * of a focus period — with nothing on screen at all — a full-screen
+ * transparent window per display was still turning a 60 Hz requestAnimationFrame
+ * loop, resizing and clearing a WebGL context every frame. Worse,
+ * `backgroundThrottling` is switched off on these windows (the overlay must
+ * keep animating while unfocused), so Chromium's own protection against
+ * exactly this was disabled too.
+ *
+ * Now the loop is torn down the moment the choreographer goes idle and rebuilt
+ * when a phase change brings the effect back. Idle cost is zero, not merely
+ * small.
+ */
+let rendering = false;
+
+function startRendering(): void {
+  if (rendering) return;
+  rendering = true;
+  syncRenderLoop();
+}
+
+function stopRendering(): void {
+  if (!rendering) return;
+  rendering = false;
+  renderer.stop();
+}
+
+/** Called on every phase change; decides whether the loop should be alive. */
+function syncRenderLoop(): void {
+  if (choreographer.getStage() === 'hidden') stopRendering();
+  else startRendering();
+}
 
 async function boot(): Promise<void> {
   const [initialSettings, state, info] = await Promise.all([
@@ -280,7 +322,7 @@ async function boot(): Promise<void> {
   engine.applySyncState(state);
   choreographer.onPhaseChange(engine.snapshot().phase, 'idle', performance.now() / 1000);
 
-  renderer.start(frame);
+  syncRenderLoop();
 
   if (info.isDev) {
     (window as unknown as { rendererStats: () => unknown }).rendererStats = () =>
