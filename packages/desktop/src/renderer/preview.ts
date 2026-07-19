@@ -1,31 +1,42 @@
 /**
- * Effect preview harness (development only).
+ * Live effect preview.
  *
- * Renders the *real* shader — the same source the overlay ships — at a series
- * of growth values, tiled into one canvas, over a synthetic desktop that mimics
- * a code editor. A screenshot of this page is therefore an honest preview of
- * what the effect will actually do, and it needs no screen-recording
- * permission and no waiting for a real cycle.
+ * Runs the *shipped* shader — the same source the overlay uses — animated in
+ * real time, with the controls needed to judge it: size, effect, whether the
+ * desktop is being bent, and a live frame-rate readout.
  *
- * Open with `?effect=gargantua&lensing=1`.
+ * This exists because the alternative is waiting 45 minutes for a real cycle
+ * to reach the interesting part, and because reviewing a still image tells you
+ * nothing about whether the disc rotates convincingly.
+ *
+ *   npm run preview
  */
 
-import { EffectRenderer, accentToRgb, getEffect, listEffects } from '@blackholock/visuals';
+import {
+  Choreographer,
+  EffectRenderer,
+  accentToRgb,
+  getEffect,
+  listEffects,
+} from '@blackholock/visuals';
 import type { EffectFrameContext } from '@blackholock/visuals';
+import type { ThemeAccent } from '@blackholock/core';
 
+const canvas = document.getElementById('stage') as HTMLCanvasElement;
+const hud = document.getElementById('hud') as HTMLElement;
 const params = new URLSearchParams(location.search);
-const effectId = params.get('effect') ?? 'gargantua';
-const useLensing = params.get('lensing') !== '0';
-const growthValues = (params.get('growth') ?? '0.08,0.3,0.55,0.8,1')
-  .split(',')
-  .map(Number);
 
-const TILE_W = 640;
-const TILE_H = 400;
-const COLS = Math.min(growthValues.length, 3);
-const ROWS = Math.ceil(growthValues.length / COLS);
+const state = {
+  effectId: params.get('effect') ?? 'gargantua',
+  growth: Number(params.get('growth') ?? 0.5),
+  lensing: params.get('lensing') !== '0',
+  accent: (params.get('accent') ?? 'ember') as ThemeAccent,
+  playing: true,
+  autoGrow: false,
+  intensity: 1,
+};
 
-/** A stand-in desktop: dark editor chrome with syntax-coloured "code". */
+/** A stand-in desktop so lensing has something recognisable to bend. */
 function buildFakeDesktop(width: number, height: number): HTMLCanvasElement {
   const c = document.createElement('canvas');
   c.width = width;
@@ -34,100 +45,151 @@ function buildFakeDesktop(width: number, height: number): HTMLCanvasElement {
 
   ctx.fillStyle = '#11131a';
   ctx.fillRect(0, 0, width, height);
-
   ctx.fillStyle = '#0a0c11';
-  ctx.fillRect(0, 0, width, 26);
+  ctx.fillRect(0, 0, width, 30);
   ctx.fillStyle = '#0d0f16';
-  ctx.fillRect(0, 26, 190, height - 26);
+  ctx.fillRect(0, 30, 220, height - 30);
 
   const palette = ['#7fb3ff', '#c792ea', '#ffcb6b', '#c3e88d', '#89ddff', '#6b7280'];
-  ctx.font = '13px ui-monospace, SFMono-Regular, Menlo, monospace';
-
-  let y = 46;
-  let seed = 7;
+  let seed = 11;
   const rnd = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
 
-  while (y < height) {
-    let x = 210 + Math.floor(rnd() * 3) * 18;
-    const tokens = 3 + Math.floor(rnd() * 7);
+  for (let y = 54; y < height; y += 24) {
+    let x = 246 + Math.floor(rnd() * 3) * 20;
+    const tokens = 3 + Math.floor(rnd() * 8);
     for (let i = 0; i < tokens; i += 1) {
-      const w = 26 + rnd() * 90;
-      if (x + w > width - 24) break;
+      const w = 30 + rnd() * 110;
+      if (x + w > width - 30) break;
       ctx.fillStyle = palette[Math.floor(rnd() * palette.length)]!;
-      ctx.globalAlpha = 0.75 + rnd() * 0.25;
-      ctx.fillRect(x, y - 9, w, 11);
-      x += w + 10;
+      ctx.globalAlpha = 0.72 + rnd() * 0.28;
+      ctx.fillRect(x, y - 10, w, 12);
+      x += w + 12;
     }
     ctx.globalAlpha = 1;
-    y += 21;
   }
   return c;
 }
 
-function main(): void {
-  const stage = document.getElementById('stage') as HTMLCanvasElement;
-  const label = document.getElementById('label') as HTMLElement;
-
-  const effect = getEffect(effectId);
-  label.textContent = `${effect.id} · lensing ${useLensing ? 'on' : 'off'} · growth ${growthValues.join(', ')}`;
-
-  const tile = document.createElement('canvas');
-  const renderer = new EffectRenderer(tile, { maxRenderEdge: 4096 });
-  if (!renderer.isAvailable) {
-    label.textContent = 'WebGL 2 unavailable';
-    return;
-  }
-  if (!renderer.setEffect(effect)) {
-    label.textContent = 'Shader failed to compile — see console';
-    return;
-  }
-
-  // Feed the synthetic desktop in through a video-shaped shim, so the renderer
-  // takes exactly the same path it does with a real capture stream.
-  const desktop = buildFakeDesktop(TILE_W * 2, TILE_H * 2);
-  if (useLensing && effect.supportsScreenLensing) {
-    renderer.setScreenSource(desktop as unknown as HTMLVideoElement);
-  }
-
-  stage.width = TILE_W * COLS;
-  stage.height = TILE_H * ROWS;
-  const out = stage.getContext('2d')!;
-  out.fillStyle = '#000';
-  out.fillRect(0, 0, stage.width, stage.height);
-
-  renderer.resize(TILE_W, TILE_H, 2);
-
-  growthValues.forEach((growth, index) => {
-    const minEdge = Math.min(TILE_W, TILE_H) * 2;
-    const diagonal = Math.hypot(TILE_W * 2, TILE_H * 2);
-    const eased = 0.15 * growth + 0.85 * growth ** 3;
-    const radius = Math.max(4, minEdge * 0.005) + (diagonal * 0.55 - 4) * eased;
-
-    const context: EffectFrameContext = {
-      time: 2.4,
-      resolution: [TILE_W * 2, TILE_H * 2],
-      center: [TILE_W, TILE_H],
-      radius,
-      growth,
-      intensity: 1,
-      blackout: 0,
-      hasScreenTexture: useLensing && effect.supportsScreenLensing,
-      accent: accentToRgb('ember'),
-      reducedMotion: false,
-    };
-
-    renderer.renderOnce(context);
-
-    const col = index % COLS;
-    const row = Math.floor(index / COLS);
-    out.drawImage(tile, col * TILE_W, row * TILE_H, TILE_W, TILE_H);
-
-    out.fillStyle = 'rgba(255,255,255,0.55)';
-    out.font = '12px ui-monospace, monospace';
-    out.fillText(`growth ${growth}`, col * TILE_W + 10, row * TILE_H + 18);
-  });
-
-  console.info(`preview:done effects=${listEffects().map((e) => e.id).join(',')}`);
+const renderer = new EffectRenderer(canvas, { maxRenderEdge: 3200 });
+if (!renderer.isAvailable) {
+  hud.textContent = 'WebGL 2 unavailable on this machine.';
+  throw new Error('no webgl2');
 }
 
-main();
+const desktop = buildFakeDesktop(3200, 2000);
+const choreographer = new Choreographer();
+void choreographer;
+
+let startedAt = performance.now();
+let pausedAt = 0;
+
+function applyEffect(): void {
+  const effect = getEffect(state.effectId);
+  if (!renderer.setEffect(effect)) {
+    hud.textContent = `Shader "${effect.id}" failed to compile — see console.`;
+    return;
+  }
+  renderer.setScreenSource(
+    state.lensing && effect.supportsScreenLensing
+      ? (desktop as unknown as HTMLVideoElement)
+      : null,
+  );
+}
+
+function frame(): EffectFrameContext | null {
+  const dpr = window.devicePixelRatio || 1;
+  const [width, height] = renderer.resize(window.innerWidth, window.innerHeight, dpr);
+
+  if (state.autoGrow && state.playing) {
+    // One full growth sweep every 24 seconds, purely to inspect the curve.
+    state.growth = ((performance.now() - startedAt) / 24000) % 1;
+    (document.getElementById('growth') as HTMLInputElement).value = String(state.growth);
+  }
+
+  const minEdge = Math.min(width, height);
+  const diagonal = Math.hypot(width, height);
+  const eased = 0.15 * state.growth + 0.85 * state.growth ** 3;
+  const radius = Math.max(4, minEdge * 0.005) + (diagonal * 0.55 - 4) * eased;
+
+  const now = state.playing
+    ? (performance.now() - startedAt) / 1000
+    : (pausedAt - startedAt) / 1000;
+
+  const stats = renderer.getStats();
+  hud.innerHTML =
+    `<b>${state.effectId}</b> · growth ${(state.growth * 100).toFixed(0)}% · ` +
+    `${stats.fps} fps · ${stats.frameMs.toFixed(2)} ms · ` +
+    `${stats.renderWidth}×${stats.renderHeight} · ` +
+    `lensing ${state.lensing ? 'on' : 'off'}`;
+
+  return {
+    time: now,
+    resolution: [width, height],
+    center: [width / 2, height / 2],
+    radius,
+    growth: state.growth,
+    intensity: state.intensity,
+    blackout: 0,
+    hasScreenTexture: state.lensing && getEffect(state.effectId).supportsScreenLensing,
+    accent: accentToRgb(state.accent),
+    reducedMotion: false,
+  };
+}
+
+// ------------------------------------------------------------------ controls
+
+function buildControls(): void {
+  const panel = document.getElementById('controls') as HTMLElement;
+
+  const effectSelect = document.getElementById('effect') as HTMLSelectElement;
+  for (const effect of listEffects()) {
+    const option = document.createElement('option');
+    option.value = effect.id;
+    option.textContent = effect.id;
+    effectSelect.append(option);
+  }
+  effectSelect.value = state.effectId;
+  effectSelect.addEventListener('change', () => {
+    state.effectId = effectSelect.value;
+    applyEffect();
+  });
+
+  const growth = document.getElementById('growth') as HTMLInputElement;
+  growth.value = String(state.growth);
+  growth.addEventListener('input', () => {
+    state.autoGrow = false;
+    (document.getElementById('autogrow') as HTMLInputElement).checked = false;
+    state.growth = Number(growth.value);
+  });
+
+  const lensing = document.getElementById('lensing') as HTMLInputElement;
+  lensing.checked = state.lensing;
+  lensing.addEventListener('change', () => {
+    state.lensing = lensing.checked;
+    applyEffect();
+  });
+
+  const autogrow = document.getElementById('autogrow') as HTMLInputElement;
+  autogrow.addEventListener('change', () => {
+    state.autoGrow = autogrow.checked;
+    startedAt = performance.now();
+  });
+
+  panel.addEventListener('keydown', (event) => event.stopPropagation());
+}
+
+window.addEventListener('keydown', (event) => {
+  if (event.code === 'Space') {
+    event.preventDefault();
+    state.playing = !state.playing;
+    if (state.playing) startedAt += performance.now() - pausedAt;
+    else pausedAt = performance.now();
+  }
+  if (event.key === 'h') {
+    document.body.classList.toggle('clean');
+  }
+});
+
+buildControls();
+applyEffect();
+renderer.start(frame);

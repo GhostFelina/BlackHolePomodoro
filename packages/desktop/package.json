@@ -10,7 +10,8 @@
     "start": "electron-vite preview",
     "dist": "electron-vite build && electron-builder",
     "dist:mac": "electron-vite build && electron-builder --mac",
-    "dist:win": "electron-vite build && electron-builder --win"
+    "dist:win": "electron-vite build && electron-builder --win",
+    "preview": "electron-vite build && electron scripts/preview.mjs"
   },
   "dependencies": {
     "@blackholock/core": "*",
