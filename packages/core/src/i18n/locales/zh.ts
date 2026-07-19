@@ -144,6 +144,12 @@ export const zh: Messages = {
 
   'effect.gargantua.name': '卡冈图雅',
   'effect.gargantua.description': '带吸积盘、漂移星场与星云的引力透镜黑洞。',
+  'effect.inferno.name': '炼狱',
+  'effect.inferno.description': '空无的黑色之上，红与橙的模拟风格吸积盘。',
+  'effect.halo.name': '光环',
+  'effect.halo.description': '巨大的暗球被暖光环绕，置身深邃斑斓的星野。',
+  'effect.prism.name': '棱镜',
+  'effect.prism.description': '光线掠过视界弯折时裂成彩虹光带。',
   'effect.eclipse.name': '日食',
   'effect.eclipse.description': '一个安静的暗色圆盘，外缘一圈细日冕。极简而沉静。',
   'effect.voidfield.name': '虚空场',

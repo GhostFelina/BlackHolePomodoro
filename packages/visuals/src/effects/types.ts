@@ -78,6 +78,11 @@ export interface FocusEffect {
    * is still small.
    */
   influenceRadiusFactor: number;
+  /**
+   * Selects a variation within a shared shader. Effects with the same
+   * `fragmentSource` and different `styleId` compile once and cost the same.
+   */
+  styleId?: number;
   /** GLSL ES 3.00 fragment shader body. See `FRAGMENT_PREAMBLE`. */
   fragmentSource: string;
 }
@@ -111,6 +116,7 @@ uniform float uInclination;   // degrees
 uniform float uDoppler;
 uniform float uStarDensity;
 uniform float uNebula;
+uniform float uStyle;     // selects a variation inside a shared shader
 
 in  vec2 vUv;
 out vec4 fragColor;

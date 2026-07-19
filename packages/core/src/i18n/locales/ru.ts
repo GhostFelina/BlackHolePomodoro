@@ -148,6 +148,12 @@ export const ru: Messages = {
   'effect.gargantua.name': 'Гаргантюа',
   'effect.gargantua.description':
     'Чёрная дыра с гравитационным линзированием, аккреционным диском, звёздным полем и туманностью.',
+  'effect.inferno.name': 'Инферно',
+  'effect.inferno.description': 'Диск в стиле симуляции, красный и оранжевый на пустой черноте.',
+  'effect.halo.name': 'Гало',
+  'effect.halo.description': 'Огромная тёмная сфера в кольце тёплого света, в глубоком цветном поле.',
+  'effect.prism.name': 'Призма',
+  'effect.prism.description': 'Свет, распадающийся на радужные полосы при изгибе у горизонта.',
   'effect.eclipse.name': 'Затмение',
   'effect.eclipse.description': 'Спокойный тёмный диск с тонкой короной. Минимально и тихо.',
   'effect.voidfield.name': 'Поле Пустоты',

@@ -23,6 +23,6 @@ export {
   type EffectParams,
   type FocusEffect,
 } from './effects/types.js';
-export { gargantua } from './effects/gargantua.js';
+export { gargantua, halo, inferno, prism } from './effects/gargantua.js';
 export { eclipse } from './effects/eclipse.js';
 export { voidfield } from './effects/voidfield.js';

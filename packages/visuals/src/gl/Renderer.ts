@@ -49,6 +49,7 @@ const UNIFORM_NAMES = [
   'uDoppler',
   'uStarDensity',
   'uNebula',
+  'uStyle',
 ] as const;
 
 type UniformName = (typeof UNIFORM_NAMES)[number];
@@ -172,21 +173,29 @@ export class EffectRenderer {
     if (!this.gl) return false;
     if (this.currentEffectId === effect.id && this.current) return true;
 
-    const cached = this.programs.get(effect.id);
+    // Keyed by shader source rather than by effect id. The black-hole styles
+    // are variations of one shader driven by a uniform, so they must share a
+    // single compiled program instead of each paying for its own.
+    const key = effect.fragmentSource;
+    const cached = this.programs.get(key);
     if (cached) {
       this.current = cached;
       this.currentEffectId = effect.id;
+      this.styleId = effect.styleId ?? 0;
       return true;
     }
 
     const compiled = this.compile(effect);
     if (!compiled) return false;
 
-    this.programs.set(effect.id, compiled);
+    this.programs.set(key, compiled);
     this.current = compiled;
     this.currentEffectId = effect.id;
+    this.styleId = effect.styleId ?? 0;
     return true;
   }
+
+  private styleId = 0;
 
   private compile(effect: FocusEffect): CompiledProgram | null {
     const gl = this.gl!;
@@ -438,6 +447,7 @@ export class EffectRenderer {
     if (u.uDoppler) gl.uniform1f(u.uDoppler, p.doppler);
     if (u.uStarDensity) gl.uniform1f(u.uStarDensity, p.starDensity);
     if (u.uNebula) gl.uniform1f(u.uNebula, p.nebula);
+    if (u.uStyle) gl.uniform1f(u.uStyle, this.styleId);
 
     gl.drawArrays(gl.TRIANGLES, 0, 3);
 

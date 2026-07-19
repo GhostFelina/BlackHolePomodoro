@@ -59,6 +59,7 @@ const STEPS = 110;
 
 export const gargantua: FocusEffect = {
   id: 'gargantua',
+  styleId: 0,
   nameKey: 'effect.gargantua.name',
   descriptionKey: 'effect.gargantua.description',
   supportsScreenLensing: true,
@@ -89,7 +90,36 @@ float warpedFbm(vec2 p) {
 // the accent reach the core would make the whole disc read as coloured plastic
 // rather than as something incandescent, so the core is pinned near white and
 // the accent owns the cooler rim where colour is physically plausible.
+// Style ids. One shader, four looks, selected by a uniform so they share a
+// compiled program and cost the same to draw.
+const float S_CLASSIC = 0.0;   // Interstellar: cream and white, near edge-on
+const float S_INFERNO = 1.0;   // NASA simulation: saturated red through orange
+const float S_HALO    = 2.0;   // supermassive: faint disc, bright rim, rich sky
+const float S_PRISM   = 3.0;   // chromatic dispersion into rainbow bands
+
 vec3 discColour(float t) {
+  // Inferno never reaches white. Real simulation stills of a thin disc render
+  // it in a narrow red-to-yellow band, and holding the top end short of white
+  // is what keeps it reading as fire rather than as metal.
+  if (uStyle == S_INFERNO) {
+    vec3 deep = vec3(0.42, 0.03, 0.01);
+    vec3 red  = vec3(0.96, 0.16, 0.02);
+    vec3 amber= vec3(1.00, 0.52, 0.06);
+    vec3 top  = vec3(1.00, 0.80, 0.26);
+    if (t < 0.30) return mix(deep, red, t / 0.30);
+    if (t < 0.68) return mix(red, amber, (t - 0.30) / 0.38);
+    return mix(amber, top, (t - 0.68) / 0.32);
+  }
+
+  // Prism: hue swept across the disc so dispersion reads as banding. Real
+  // chromatic separation would mean re-marching per wavelength, which costs
+  // three times as much for a difference the eye reads as colour anyway.
+  if (uStyle == S_PRISM) {
+    float h = fract(t * 1.15 + 0.02);
+    vec3 rainbow = 0.58 + 0.42 * cos(6.28318 * (h + vec3(0.00, 0.33, 0.67)));
+    return mix(rainbow, vec3(1.0), smoothstep(0.72, 1.0, t) * 0.72);
+  }
+
   // Four stops, not three. Reference frames of Gargantua darken through tan
   // into a deep rust at the outermost material rather than holding one
   // saturated hue to the edge, and that falloff is a large part of why the
@@ -219,7 +249,14 @@ void main() {
   // follows from the critical impact parameter.
   float pixPerRad = rs / (B_CRIT / CAM_DIST);
 
-  float incline = radians(uInclination);
+  // Each style has its own natural viewing angle. The user's setting offsets
+  // it rather than replacing it, so the styles stay distinguishable at any
+  // slider position.
+  float baseIncline = uStyle == S_INFERNO ? 11.0
+                    : uStyle == S_PRISM   ? 17.0
+                    : uStyle == S_HALO    ? 1.6
+                    : 3.2;
+  float incline = radians(max(0.4, baseIncline + (uInclination - 3.2)));
   float ci = cos(incline), si = sin(incline);
   vec3 camPos = vec3(0.0, CAM_DIST * si, -CAM_DIST * ci);
   vec3 fwd    = normalize(-camPos);
@@ -312,7 +349,13 @@ void main() {
         emission *= mix(1.0, full, uDoppler);
       }
 
-      disc += emission * dt * 0.92 * uDiscBrightness;
+      // Halo shows almost no disc structure — the light in that reference is a
+      // broad rim hugging the shadow, not a thin band cutting across it.
+      float styleGain = uStyle == S_HALO ? 0.16
+                      : uStyle == S_INFERNO ? 1.22
+                      : uStyle == S_PRISM ? 1.05
+                      : 1.0;
+      disc += emission * dt * 0.92 * uDiscBrightness * styleGain;
     }
 
     vec3 acc = -1.5 * h2 * pos / (r2 * r2 * r);
@@ -348,7 +391,29 @@ void main() {
     // Sampled in the *deflected* direction, so a single star can appear twice:
     // once directly and once smeared into an Einstein arc around the hole.
     vec2 sky = vec2(atan(outDir.z, outDir.x), asin(clamp(outDir.y, -1.0, 1.0)));
-    background += deepSky(sky, uTime);
+    // Halo is set against a deep, colourful field — that background is half of
+    // what makes the reference image work. Inferno and Prism are near-black,
+    // which is what gives their discs their contrast.
+    float skyGain = uStyle == S_HALO ? 1.75
+                  : uStyle == S_INFERNO ? 0.10
+                  : uStyle == S_PRISM ? 0.14
+                  : 1.0;
+    vec3 field = deepSky(sky, uTime) * skyGain;
+
+    if (uStyle == S_HALO) {
+      // The reference field is blue and violet with red knots, not the warm
+      // Milky-Way tan the other styles use. Simply brightening the shared sky
+      // turned it beige, so the hue is remapped: luminance is preserved and
+      // the colour is rebuilt cool, with the red emission kept as accents.
+      float lum = dot(field, vec3(0.30, 0.59, 0.11));
+      vec3  cool = vec3(0.34, 0.46, 1.00) * lum * 1.55;
+      vec3  deep = vec3(0.62, 0.30, 0.95) * lum * 0.85;
+      vec3  knot = vec3(1.00, 0.28, 0.34) * pow(lum, 2.2) * 2.10;
+      float split = warpedFbm(sky * 0.9 + 17.0);
+      field = mix(cool, deep, smoothstep(0.40, 0.78, split)) + knot;
+    }
+
+    background += field;
   }
 
   // --------------------------------------------------------- photon ring
@@ -359,6 +424,23 @@ void main() {
   float ringR = rs * 1.005;
   float ring  = exp(-pow((rPix - ringR) / (rs * 0.028), 2.0));
   disc += mix(vec3(1.00, 0.95, 0.86), uAccent, 0.18) * ring * 0.26;
+
+  if (uStyle == S_HALO) {
+    // The broad, soft, warm rim that defines the supermassive reference: wide
+    // enough to read as a glow around a sphere rather than as an orbit.
+    float halo = exp(-pow((rPix - rs * 1.16) / (rs * 0.30), 2.0));
+    vec3  warm = mix(vec3(1.00, 0.86, 0.66), uAccent, 0.45);
+    disc += warm * halo * 1.35 * uDiscBrightness;
+    // A second, fainter shell further out gives the edge depth.
+    disc += warm * exp(-pow((rPix - rs * 1.62) / (rs * 0.62), 2.0)) * 0.30;
+  }
+
+  if (uStyle == S_PRISM) {
+    // Dispersion fringes: the ring splits into coloured rims.
+    float f = exp(-pow((rPix - rs * 1.06) / (rs * 0.075), 2.0));
+    vec3  split = 0.5 + 0.5 * cos(6.28318 * (rPix / (rs * 0.32) + vec3(0.0, 0.33, 0.67)));
+    disc += split * f * 0.85;
+  }
 
   disc     *= lensStrength;
   captured *= lensStrength;
@@ -395,4 +477,37 @@ void main() {
   fragColor = vec4(color * alpha, alpha); // premultiplied
 }
 `,
+};
+
+
+/**
+ * The three sibling styles.
+ *
+ * They reuse Gargantua's shader source verbatim and differ only by `styleId`,
+ * which the renderer passes as a uniform. Because the program cache is keyed
+ * on source rather than on effect id, all four share one compiled program:
+ * adding a style costs a branch, not a shader.
+ */
+export const inferno: FocusEffect = {
+  ...gargantua,
+  id: 'inferno',
+  nameKey: 'effect.inferno.name',
+  descriptionKey: 'effect.inferno.description',
+  styleId: 1,
+};
+
+export const halo: FocusEffect = {
+  ...gargantua,
+  id: 'halo',
+  nameKey: 'effect.halo.name',
+  descriptionKey: 'effect.halo.description',
+  styleId: 2,
+};
+
+export const prism: FocusEffect = {
+  ...gargantua,
+  id: 'prism',
+  nameKey: 'effect.prism.name',
+  descriptionKey: 'effect.prism.description',
+  styleId: 3,
 };

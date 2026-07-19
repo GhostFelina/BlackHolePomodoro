@@ -147,6 +147,12 @@ export const ar: Messages = {
   'effect.gargantua.name': 'غارغانتوا',
   'effect.gargantua.description':
     'ثقب أسود بعدسة جاذبية وقرص تراكم وحقل نجوم وسديم.',
+  'effect.inferno.name': 'جحيم',
+  'effect.inferno.description': 'قرص بأسلوب المحاكاة بالأحمر والبرتقالي على سواد خالٍ.',
+  'effect.halo.name': 'هالة',
+  'effect.halo.description': 'كرة مظلمة هائلة يطوّقها ضوء دافئ، في حقل عميق ملوّن.',
+  'effect.prism.name': 'منشور',
+  'effect.prism.description': 'ضوء ينشطر إلى أشرطة قوس قزح وهو ينحني قرب الأفق.',
   'effect.eclipse.name': 'كسوف',
   'effect.eclipse.description': 'قرص مظلم هادئ بهالة رفيعة. بسيط وصامت.',
   'effect.voidfield.name': 'حقل الفراغ',

@@ -147,6 +147,12 @@ export const ko: Messages = {
   'effect.gargantua.name': '가르강튀아',
   'effect.gargantua.description':
     '강착 원반과 흐르는 별밭, 성운을 두른 중력 렌즈 블랙홀.',
+  'effect.inferno.name': '인페르노',
+  'effect.inferno.description': '텅 빈 검정을 배경으로 한 붉고 주황빛의 시뮬레이션풍 원반.',
+  'effect.halo.name': '헤일로',
+  'effect.halo.description': '따뜻한 빛의 고리를 두른 거대한 어두운 구체, 깊고 화려한 성야 속에.',
+  'effect.prism.name': '프리즘',
+  'effect.prism.description': '지평선 곁을 휘어 지나며 무지개 띠로 갈라지는 빛.',
   'effect.eclipse.name': '이클립스',
   'effect.eclipse.description': '얇은 코로나를 두른 고요한 어두운 원반. 최소한이고 조용합니다.',
   'effect.voidfield.name': '보이드 필드',

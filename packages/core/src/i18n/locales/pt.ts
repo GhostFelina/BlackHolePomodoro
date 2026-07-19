@@ -148,6 +148,12 @@ export const pt: Messages = {
   'effect.gargantua.name': 'Gargântua',
   'effect.gargantua.description':
     'Um buraco negro com lente gravitacional, disco de acreção, campo de estrelas e nebulosa.',
+  'effect.inferno.name': 'Inferno',
+  'effect.inferno.description': 'Um disco em estilo simulação, vermelho e laranja sobre preto vazio.',
+  'effect.halo.name': 'Halo',
+  'effect.halo.description': 'Uma vasta esfera escura cercada de luz quente, num campo profundo e colorido.',
+  'effect.prism.name': 'Prisma',
+  'effect.prism.description': 'Luz dividida em faixas de arco-íris ao se curvar junto ao horizonte.',
   'effect.eclipse.name': 'Eclipse',
   'effect.eclipse.description': 'Um disco escuro e calmo com uma coroa fina. Mínimo e silencioso.',
   'effect.voidfield.name': 'Campo Vazio',

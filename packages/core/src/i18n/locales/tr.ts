@@ -146,6 +146,12 @@ export const tr: Messages = {
   'effect.gargantua.name': 'Gargantua',
   'effect.gargantua.description':
     'Akresyon diski, gezinen yıldız alanı ve bulutsusu olan merceklenmiş bir kara delik.',
+  'effect.inferno.name': 'Cehennem',
+  'effect.inferno.description': 'Boş karanlıkta kırmızı ve turuncu, simülasyon tarzı bir disk.',
+  'effect.halo.name': 'Hale',
+  'effect.halo.description': 'Sıcak ışıkla çevrelenmiş devasa karanlık küre, derin ve renkli bir alanda.',
+  'effect.prism.name': 'Prizma',
+  'effect.prism.description': 'Ufkun yanından bükülürken gökkuşağı bantlarına ayrılan ışık.',
   'effect.eclipse.name': 'Tutulma',
   'effect.eclipse.description': 'İnce bir taçla çevrili sakin, karanlık bir disk. Sade ve sessiz.',
   'effect.voidfield.name': 'Boşluk Alanı',

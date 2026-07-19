@@ -167,6 +167,12 @@ export interface Messages {
   // -- effects --------------------------------------------------------------
   'effect.gargantua.name': string;
   'effect.gargantua.description': string;
+  'effect.inferno.name': string;
+  'effect.inferno.description': string;
+  'effect.halo.name': string;
+  'effect.halo.description': string;
+  'effect.prism.name': string;
+  'effect.prism.description': string;
   'effect.eclipse.name': string;
   'effect.eclipse.description': string;
   'effect.voidfield.name': string;

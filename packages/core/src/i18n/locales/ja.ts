@@ -147,6 +147,12 @@ export const ja: Messages = {
   'effect.gargantua.name': 'ガルガンチュア',
   'effect.gargantua.description':
     '降着円盤と漂う星野、星雲をともなう重力レンズ効果のブラックホール。',
+  'effect.inferno.name': 'インフェルノ',
+  'effect.inferno.description': '何もない黒を背に、赤と橙のシミュレーション調の円盤。',
+  'effect.halo.name': 'ヘイロー',
+  'effect.halo.description': '暖かい光の環をまとう巨大な暗い球体。深く色鮮やかな星域の中に。',
+  'effect.prism.name': 'プリズム',
+  'effect.prism.description': '地平線をかすめて曲がるとき虹の帯に分かれる光。',
   'effect.eclipse.name': 'イクリプス',
   'effect.eclipse.description': '細いコロナをまとった静かな暗い円盤。最小限で物静か。',
   'effect.voidfield.name': 'ヴォイドフィールド',

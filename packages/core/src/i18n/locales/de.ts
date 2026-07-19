@@ -148,6 +148,12 @@ export const de: Messages = {
   'effect.gargantua.name': 'Gargantua',
   'effect.gargantua.description':
     'Ein gravitativ gelinstes Schwarzes Loch mit Akkretionsscheibe, driftendem Sternenfeld und Nebel.',
+  'effect.inferno.name': 'Inferno',
+  'effect.inferno.description': 'Eine Scheibe im Simulationsstil in Rot und Orange vor leerem Schwarz.',
+  'effect.halo.name': 'Halo',
+  'effect.halo.description': 'Eine gewaltige dunkle Kugel, von warmem Licht umringt, in einem tiefen Farbfeld.',
+  'effect.prism.name': 'Prisma',
+  'effect.prism.description': 'Licht, das beim Umbiegen am Horizont in Regenbogenbänder zerfällt.',
   'effect.eclipse.name': 'Eklipse',
   'effect.eclipse.description': 'Eine ruhige dunkle Scheibe mit dünner Korona. Minimal und still.',
   'effect.voidfield.name': 'Leerfeld',
