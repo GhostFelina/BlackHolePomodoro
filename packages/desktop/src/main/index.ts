@@ -303,9 +303,11 @@ class BlackHolock {
     }
 
     const win = new BrowserWindow({
-      width: 880,
-      height: 680,
-      minWidth: 720,
+      // Wide enough for the Appearance panel's two columns; below
+      // minWidth it falls back to a single column.
+      width: 1080,
+      height: 720,
+      minWidth: 760,
       minHeight: 560,
       show: false,
       title: PRODUCT.name,

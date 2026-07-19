@@ -102,20 +102,12 @@
         <section class="panel" data-panel="appearance" hidden>
           <h1 data-i18n="settings.section.appearance"></h1>
 
-          <!-- Live preview: the same renderer the overlay uses, so what is
-               shown here is exactly what will appear on screen. -->
-          <div class="field">
-            <label data-i18n="settings.preview"></label>
-            <p class="help" data-i18n="settings.preview.help"></p>
-            <div class="preview-frame">
-              <canvas id="previewCanvas"></canvas>
-              <input
-                type="range" id="previewSize" class="preview-size"
-                min="0.05" max="1" step="0.01" value="0.55"
-                aria-label="preview size"
-              />
-            </div>
-          </div>
+          <!-- Two columns: the controls scroll on the left, the preview stays
+               put on the right so a slider and its result are on screen at the
+               same time. -->
+          <div class="appearance-grid">
+            <div class="appearance-controls">
+
 
           <div class="field">
             <label data-i18n="settings.effect"></label>
@@ -235,6 +227,25 @@
                 <small data-i18n="settings.reducedMotion.help"></small>
               </span>
             </label>
+          </div>
+            </div>
+
+            <aside class="appearance-preview">
+          <!-- Live preview: the same renderer the overlay uses, so what is
+               shown here is exactly what will appear on screen. -->
+          <div class="field">
+            <label data-i18n="settings.preview"></label>
+            <p class="help" data-i18n="settings.preview.help"></p>
+            <div class="preview-frame">
+              <canvas id="previewCanvas"></canvas>
+              <input
+                type="range" id="previewSize" class="preview-size"
+                min="0.05" max="1" step="0.01" value="0.55"
+                aria-label="preview size"
+              />
+            </div>
+          </div>
+            </aside>
           </div>
         </section>
 

@@ -756,3 +756,68 @@ button.ghost.inline {
   width: auto;
   margin-block-end: 26px;
 }
+
+/* ------------------------------------------------- appearance: two columns */
+
+/*
+ * Controls on the left, preview pinned on the right.
+ *
+ * With the preview at the top of a single column it scrolled out of view the
+ * moment you reached the sliders that change it, which is exactly backwards:
+ * the whole value of a live preview is seeing the result while your hand is
+ * still on the control.
+ */
+.appearance-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 34px;
+  align-items: start;
+}
+
+.appearance-controls {
+  min-width: 0;
+}
+
+.appearance-controls .field,
+.appearance-controls .toggles {
+  max-width: none;
+}
+
+.appearance-preview {
+  position: sticky;
+  /* Clears the window's own top padding so it does not sit under the title. */
+  top: 4px;
+}
+
+.appearance-preview .field {
+  margin-block-end: 0;
+  max-width: none;
+}
+
+.appearance-preview .preview-frame {
+  max-width: none;
+  /* Taller than 16:10 here: a portrait-ish frame suits a narrow column and
+     shows more of the effect's vertical structure. */
+  aspect-ratio: 4 / 3;
+}
+
+/*
+ * Below this width the two columns would each be too narrow to be useful, so
+ * the layout falls back to a single column with the preview on top.
+ */
+@media (max-width: 940px) {
+  .appearance-grid {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .appearance-preview {
+    position: static;
+    order: -1;
+    margin-block-end: 28px;
+  }
+
+  .appearance-preview .preview-frame {
+    aspect-ratio: 16 / 10;
+  }
+}
