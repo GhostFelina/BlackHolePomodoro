@@ -136,15 +136,19 @@ float valueNoise(vec2 p) {
   return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
 }
 
+// Three octaves, not five. Octaves four and five contribute detail finer than
+// a pixel once the disc is on screen, and each one costs four hashes on every
+// sample — inside a ray-marching loop that is the difference between a frame
+// budget and a slideshow.
 float fbm(vec2 p) {
   float sum = 0.0;
   float amp = 0.5;
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 3; i++) {
     sum += valueNoise(p) * amp;
-    p = p * 2.03 + vec2(17.3, 9.1);
+    p = p * 2.11 + vec2(17.3, 9.1);
     amp *= 0.5;
   }
-  return sum;
+  return sum * 1.32;   // renormalised for the dropped octaves
 }
 
 vec2 rotate(vec2 v, float a) {

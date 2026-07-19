@@ -129,7 +129,7 @@ function frame(): EffectFrameContext | null {
   const stats = renderer.getStats();
   hud.innerHTML =
     `<b>${state.effectId}</b> · growth ${(state.growth * 100).toFixed(0)}% · ` +
-    `${stats.fps} fps · ${stats.frameMs.toFixed(2)} ms · ` +
+    `${stats.fps} fps · GPU ${stats.gpuMs.toFixed(2)} ms · ` +
     `${stats.renderWidth}×${stats.renderHeight} · ` +
     `lensing ${state.lensing ? 'on' : 'off'}`;
 
@@ -205,3 +205,10 @@ window.addEventListener('keydown', (event) => {
 buildControls();
 applyEffect();
 renderer.start(frame);
+
+// Printed to stdout so a headless capture run can report the real cost.
+const previewStatsTimer = window.setInterval(() => {
+  const s = renderer.getStats();
+  console.info(`STATS fps=${s.fps} gpu=${s.gpuMs}ms scale=${s.scale} ${s.renderWidth}x${s.renderHeight}`);
+}, 1200);
+void previewStatsTimer;

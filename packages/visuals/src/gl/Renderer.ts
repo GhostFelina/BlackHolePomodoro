@@ -72,7 +72,12 @@ export interface RendererOptions {
 
 export interface RendererStats {
   fps: number;
+  /** CPU time spent issuing draw commands. Near zero even when the GPU is busy. */
   frameMs: number;
+  /** Time the GPU actually spent on the frame, where the extension exists. */
+  gpuMs: number;
+  /** Current adaptive resolution factor, 0.4–1. */
+  scale: number;
   droppedFrames: number;
   renderWidth: number;
   renderHeight: number;
@@ -102,6 +107,26 @@ export class EffectRenderer {
   private provider: (() => EffectFrameContext | null) | null = null;
   private bloom: BloomPipeline | null = null;
 
+  // Real GPU timing. `frameMs` measured with performance.now() around the draw
+  // call only counts the time spent *issuing* commands — the GPU runs
+  // asynchronously, so that number stays near zero however heavy the shader
+  // is. It was reporting 0.1 ms while the shader was in fact the bottleneck.
+  // EXT_disjoint_timer_query_webgl2 measures what the GPU actually spends.
+  private timerExt: any = null;
+  private timerQuery: WebGLQuery | null = null;
+  private timerPending = false;
+  private gpuMs = 0;
+
+  // Adaptive resolution. The ray march costs wildly different amounts
+  // depending on how much of the screen the hole covers — a small hole exits
+  // early for almost every pixel, a large one marches all of them. Rather than
+  // pick one resolution that is either wasteful when small or unusable when
+  // large, the buffer is scaled to hit a frame-time budget. Dropping to 60 %
+  // scale is barely perceptible on a soft gradient; dropping frames is not.
+  private renderScaleFactor = 1;
+  private budgetMs = 11;          // leaves headroom inside a 16.7 ms frame
+  private lastAdaptAt = 0;
+
   constructor(canvas: HTMLCanvasElement, options: RendererOptions = {}) {
     this.canvas = canvas;
     this.options = { maxRenderEdge: 2880, ...options };
@@ -128,6 +153,8 @@ export class EffectRenderer {
     // Source is premultiplied, so the classic (ONE, 1-SRC_ALPHA) pairing.
     this.gl.blendFunc(this.gl.ONE, this.gl.ONE_MINUS_SRC_ALPHA);
     this.gl.clearColor(0, 0, 0, 0);
+
+    this.timerExt = this.gl.getExtension('EXT_disjoint_timer_query_webgl2');
 
     this.bloom = new BloomPipeline(this.gl);
     this.bloom.strength = options.bloom ?? 1.0;
@@ -259,7 +286,7 @@ export class EffectRenderer {
 
     const target = Math.max(cssWidth * dpr, cssHeight * dpr);
     const cap = this.options.maxRenderEdge;
-    const scale = target > cap ? cap / target : 1;
+    const scale = (target > cap ? cap / target : 1) * this.renderScaleFactor;
 
     const width = Math.max(1, Math.round(cssWidth * dpr * scale));
     const height = Math.max(1, Math.round(cssHeight * dpr * scale));
@@ -358,6 +385,26 @@ export class EffectRenderer {
     const compiled = this.current;
     if (!compiled) return;
 
+    // Collect the previous query before starting another; a GPU query is only
+    // readable a frame or two after it was issued.
+    if (this.timerExt && this.timerPending && this.timerQuery) {
+      const available = gl.getQueryParameter(this.timerQuery, gl.QUERY_RESULT_AVAILABLE);
+      const disjoint = gl.getParameter(this.timerExt.GPU_DISJOINT_EXT);
+      if (available && !disjoint) {
+        this.gpuMs = gl.getQueryParameter(this.timerQuery, gl.QUERY_RESULT) / 1e6;
+        this.timerPending = false;
+      } else if (disjoint) {
+        this.timerPending = false;
+      }
+    }
+    if (this.timerExt && !this.timerPending) {
+      if (!this.timerQuery) this.timerQuery = gl.createQuery();
+      if (this.timerQuery) {
+        gl.beginQuery(this.timerExt.TIME_ELAPSED_EXT, this.timerQuery);
+        this.timerPending = true;
+      }
+    }
+
     // With bloom on, the effect renders into an offscreen buffer first; the
     // chain then composites it, plus its glow, onto the screen.
     const offscreen = this.bloom?.beginScene() ?? false;
@@ -395,6 +442,39 @@ export class EffectRenderer {
     gl.drawArrays(gl.TRIANGLES, 0, 3);
 
     if (offscreen) this.bloom!.finish();
+
+    if (this.timerExt && this.timerPending) {
+      gl.endQuery(this.timerExt.TIME_ELAPSED_EXT);
+    }
+
+    this.adaptResolution(now);
+  }
+
+  /**
+   * Nudges the render scale toward the frame-time budget.
+   *
+   * Deliberately slow to react — at most one step every 400 ms, and never more
+   * than 12 % at a time — because a resolution that visibly pumps up and down
+   * is more distracting than one that is simply a little soft.
+   */
+  private adaptResolution(now: number): void {
+    if (!this.timerExt || this.gpuMs <= 0) return;
+    if (now - this.lastAdaptAt < 400) return;
+    this.lastAdaptAt = now;
+
+    const previous = this.renderScaleFactor;
+    if (this.gpuMs > this.budgetMs * 1.25) {
+      this.renderScaleFactor = Math.max(0.4, this.renderScaleFactor * 0.88);
+    } else if (this.gpuMs < this.budgetMs * 0.55) {
+      this.renderScaleFactor = Math.min(1, this.renderScaleFactor * 1.06);
+    }
+    // Force the next resize() to rebuild the buffers at the new scale.
+    if (previous !== this.renderScaleFactor) this.canvas.width = 0;
+  }
+
+  /** Frame-time target in milliseconds. Lower means softer but smoother. */
+  setFrameBudget(ms: number): void {
+    this.budgetMs = Math.max(4, ms);
   }
 
   /** Adjusts bloom at runtime; 0 turns the post chain off. */
@@ -412,6 +492,8 @@ export class EffectRenderer {
     return {
       fps: median > 0 ? Math.round(1000 / median) : 0,
       frameMs: Math.round(this.lastDrawMs * 100) / 100,
+      gpuMs: Math.round(this.gpuMs * 100) / 100,
+      scale: Math.round(this.renderScaleFactor * 100) / 100,
       droppedFrames: this.droppedFrames,
       renderWidth: this.canvas.width,
       renderHeight: this.canvas.height,

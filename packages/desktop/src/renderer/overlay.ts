@@ -292,7 +292,7 @@ async function boot(): Promise<void> {
       if (choreographer.getStage() === 'hidden') return;
       const stats = renderer.getStats();
       console.info(
-        `stage=${choreographer.getStage()} fps=${stats.fps} frame=${stats.frameMs}ms ` +
+        `stage=${choreographer.getStage()} fps=${stats.fps} gpu=${stats.gpuMs}ms cpu=${stats.frameMs}ms ` +
           `buffer=${stats.renderWidth}×${stats.renderHeight} dropped=${stats.droppedFrames} ` +
           `lensing=${screenVideo ? 'on' : 'off'}`,
       );

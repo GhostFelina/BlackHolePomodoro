@@ -13,7 +13,7 @@
     "dev": "npm run dev --workspace @blackholock/desktop",
     "build": "npm run build --workspaces --if-present",
     "typecheck": "tsc --build --force",
-    "test": "npm run test --workspaces --if-present",
+    "test": "vitest run",
     "lint": "eslint packages --ext .ts,.tsx",
     "dist": "npm run build && npm run dist --workspace @blackholock/desktop",
     "brand:icons": "node scripts/generate-icons.mjs",

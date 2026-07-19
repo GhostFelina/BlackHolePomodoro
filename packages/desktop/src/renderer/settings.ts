@@ -67,6 +67,8 @@ function setupNav(): void {
     for (const panel of document.querySelectorAll<HTMLElement>('.panel')) {
       panel.hidden = panel.dataset.panel !== section;
     }
+    if (section === 'appearance') startPreview();
+    else stopPreview();
   };
 
   for (const button of buttons) {
@@ -461,18 +463,40 @@ function syncControls(): void {
  */
 let preview: EffectRenderer | null = null;
 let previewSize = 0.55;
+let previewRunning = false;
 
+/**
+ * Creates the preview lazily and only ever runs it while the Appearance panel
+ * is actually visible.
+ *
+ * The first version started at boot and never stopped, so the full ray-traced
+ * shader and the bloom chain kept running behind the Timing, Language and
+ * About panels, on top of whatever the overlay was already doing. That is the
+ * single biggest reason the window felt slow.
+ */
 function startPreview(): void {
   const canvas = document.getElementById('previewCanvas') as HTMLCanvasElement | null;
-  if (!canvas || preview) return;
+  if (!canvas) return;
+  if (preview) {
+    if (!previewRunning) {
+      previewRunning = true;
+      preview.start(previewFrame);
+    }
+    return;
+  }
 
   preview = new EffectRenderer(canvas, {
-    // A small canvas; capping lower than the overlay keeps the settings window
-    // light even on a machine already rendering the real effect.
-    maxRenderEdge: 1400,
+    // Deliberately small. This is a thumbnail beside a slider, not the
+    // overlay: at 900 px the difference is invisible and the pixel count is
+    // roughly a third of what it was.
+    maxRenderEdge: 900,
     bloom: settings?.bloom ?? 1,
   });
   if (!preview.isAvailable) return;
+
+  // 30 fps is ample for judging a slider. Halving the frame rate halves the
+  // GPU cost outright, and nothing here needs to be smooth to the millisecond.
+  preview.setFpsCap(30);
 
   const sizeInput = document.getElementById('previewSize') as HTMLInputElement | null;
   sizeInput?.addEventListener('input', () => {
@@ -480,16 +504,29 @@ function startPreview(): void {
   });
 
   preview.setEffect(getEffect(settings?.effectId ?? 'gargantua'));
+  previewRunning = true;
 
   if (info?.isDev) {
     // Proves the panel's preview is genuinely rendering, and at what cost.
     window.setInterval(() => {
       const s = preview?.getStats();
-      if (s) console.info(`preview fps=${s.fps} frame=${s.frameMs}ms ${s.renderWidth}x${s.renderHeight}`);
+      if (s) console.info(`preview fps=${s.fps} gpu=${s.gpuMs}ms cpu=${s.frameMs}ms ${s.renderWidth}x${s.renderHeight}`);
     }, 2500);
   }
 
-  preview.start(() => {
+  preview.start(previewFrame);
+}
+
+/** Stops the preview and releases the GPU while another panel is showing. */
+function stopPreview(): void {
+  if (preview && previewRunning) {
+    previewRunning = false;
+    preview.stop();
+  }
+}
+
+function previewFrame() {
+  {
     if (!preview || !settings) return null;
     const dpr = window.devicePixelRatio || 1;
     const rect = (canvas.parentElement as HTMLElement).getBoundingClientRect();
@@ -513,7 +550,7 @@ function startPreview(): void {
       reducedMotion: settings.reducedMotion,
       params: settingsToEffectParams(settings),
     };
-  });
+  }
 }
 
 /** Pushes changes that the renderer holds outside the per-frame context. */
@@ -535,19 +572,34 @@ function toast(message: string): void {
   toastTimer = window.setTimeout(() => el.classList.remove('visible'), 1600);
 }
 
+/**
+ * Persists a change and refreshes only what that change can affect.
+ *
+ * This used to rebuild every list in the window — presets, effect cards,
+ * accent swatches, strictness cards and the whole twelve-entry language
+ * picker — on every slider release. Dragging a slider therefore queued dozens
+ * of full DOM rebuilds, which is what made buttons feel dead: the main thread
+ * was busy re-creating elements that had not changed.
+ */
 async function patch(update: Partial<Settings>): Promise<void> {
   settings = await api.settings.set(update);
-  if ('locale' in update) {
+  const changed = new Set(Object.keys(update));
+
+  if (changed.has('locale')) {
     await syncLocale();
     applyTranslations();
-  } else {
-    renderPresets();
-    renderEffects();
-    renderAccents();
-    renderStrictness();
-    renderLanguages();
-    syncControls();
+    toast(i18n.t('settings.saved'));
+    return;
   }
+
+  if (changed.has('workMinutes') || changed.has('breakMinutes') || changed.has('warningMinutes')) {
+    renderPresets();
+  }
+  if (changed.has('effectId')) renderEffects();
+  if (changed.has('accent')) renderAccents();
+  if (changed.has('strictness')) renderStrictness();
+
+  syncControls();
   toast(i18n.t('settings.saved'));
 }
 
@@ -562,7 +614,6 @@ async function boot(): Promise<void> {
 
   setupNav();
   setupControls();
-  startPreview();
   setupAbout();
   applyTranslations();
 

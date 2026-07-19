@@ -55,7 +55,7 @@ import type { FocusEffect } from './types.js';
  * look majestic rather than busy.
  */
 
-const STEPS = 220;
+const STEPS = 110;
 
 export const gargantua: FocusEffect = {
   id: 'gargantua',
@@ -245,14 +245,14 @@ void main() {
     float r  = sqrt(r2);
 
     if (r < 1.0) { captured = 1.0; break; }
-    if (r > 46.0 && dot(pos, vel) > 0.0) break;
+    if (r > 30.0 && dot(pos, vel) > 0.0) break;
 
     // Step size: fine near the photon sphere where the path curves hard, and
     // fine again near the equatorial plane so the slab is sampled properly
     // rather than stepped over.
     float nearPlane = 1.0 - smoothstep(0.0, DISC_THICK * 3.0, abs(pos.y));
-    float dt = clamp(0.085 * (r - 0.9), 0.015, 1.10);
-    dt = mix(dt, min(dt, 0.055), nearPlane);
+    float dt = clamp(0.16 * (r - 0.9), 0.030, 2.20);
+    dt = mix(dt, min(dt, 0.075), nearPlane);
 
     // --- volumetric disc ---------------------------------------------------
     float rd = length(pos.xz);
@@ -277,7 +277,13 @@ void main() {
       vec2  uvB = vec2(sw * 2.10, rd * 2.60);
       vec2  uvC = vec2(sw * 6.40, rd * 5.10);
 
-      float base  = warpedFbm(uvA);
+      // Plain fbm plus two ridged bands, never the domain-warped variant.
+      // warpedFbm is three fbm evaluations; calling it on every step a ray
+      // takes through the slab was costing roughly sixty hash operations per
+      // step and was single-handedly responsible for the frame time. The
+      // anisotropic sampling below already stretches the noise along the flow,
+      // which is what the warp was there to achieve.
+      float base  = fbm(uvA);
       float ridge = 1.0 - abs(2.0 * fbm(uvB) - 1.0);
       float fine  = 1.0 - abs(2.0 * fbm(uvC) - 1.0);
 

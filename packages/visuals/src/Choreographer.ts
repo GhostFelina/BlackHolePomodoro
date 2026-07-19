@@ -41,14 +41,33 @@ export interface ChoreographyInput {
 
 export const SWALLOW_SECONDS = 2.2;
 export const COLLAPSE_SECONDS = 1.2;
-const BIRTH_SECONDS = 1.5;
+const BIRTH_SECONDS = 2.5;
 
-/** Where the hole is allowed to appear, as fractions of the viewport. */
+/**
+ * Fraction of the countdown the hole spends completely motionless.
+ *
+ * It appears, and then it does nothing at all: no drift, no growth, no wander.
+ * On a five-minute countdown that is the first ninety seconds. The point is
+ * that it should register as a distant object you noticed, not as an animation
+ * that started playing at you.
+ */
+const STATIC_HOLD = 0.30;
+
+/** Base wander frequency. Low enough that no single sine is trackable. */
+const WANDER_HZ = 0.075;
+
+/**
+ * Where the hole is allowed to appear, as fractions of the viewport.
+ *
+ * All of them sit well away from the centre and away from the top-left, where
+ * most people keep the window they are actually working in.
+ */
 const SPAWN_POINTS: ReadonlyArray<readonly [number, number]> = [
-  [0.28, 0.30],
-  [0.72, 0.30],
-  [0.30, 0.68],
-  [0.70, 0.66],
+  [0.78, 0.24],
+  [0.84, 0.62],
+  [0.22, 0.74],
+  [0.68, 0.80],
+  [0.16, 0.30],
 ];
 
 export class Choreographer {
@@ -133,25 +152,48 @@ export class Choreographer {
       case 'growing': {
         const p = snapshot.warningProgress;
 
-        // Starts as a handful of pixels; ends covering the screen. Slow at the
-        // start so it reads as a curiosity, then unmistakably urgent.
-        const eased = 0.15 * p + 0.85 * p * p * p;
-        const minRadius = Math.max(4, minEdge * 0.005);
-        const radius = minRadius + (diagonal * 0.55 - minRadius) * eased;
+        // --- size ------------------------------------------------------------
+        //
+        // Growth is *exponential*, not eased-linear, and it begins only after a
+        // motionless hold.
+        //
+        // The earlier curve reached nine times its birth size in the first
+        // minute of a five-minute countdown, which is why nothing ever felt
+        // still. Exponential growth is also what an object approaching at
+        // constant speed actually does to your field of view: almost nothing
+        // for most of the approach, then everything at the end.
+        const minRadius = Math.max(5, minEdge * 0.0045);
+        const maxRadius = diagonal * 0.55;
 
-        // Drift from the spawn point toward the centre.
-        const drift = smoothstep(0.15, 0.95, p);
+        const advance = p <= STATIC_HOLD ? 0 : (p - STATIC_HOLD) / (1 - STATIC_HOLD);
+        const shaped = Math.pow(advance, 2.3);
+        const radius = minRadius * Math.pow(maxRadius / minRadius, shaped);
+
+        // --- position --------------------------------------------------------
+        //
+        // Fixed in place through the hold, then drifting toward the middle over
+        // the remainder. The drift is deliberately late and slow: this is a
+        // distant object, and distant objects do not visibly cross a field of
+        // view in five minutes.
+        const drift = smoothstep(STATIC_HOLD, 1.0, p) ** 1.6;
         const baseX = lerp(this.spawn[0] * width, width * 0.5, drift);
         const baseY = lerp(this.spawn[1] * height, height * 0.5, drift);
 
-        // Two out-of-phase sines per axis: organic, never repeating visibly,
-        // and settling down as the hole grows.
         let cx = baseX;
         let cy = baseY;
-        if (!input.reducedMotion) {
-          const amp = minEdge * 0.08 * (1 - 0.7 * p);
-          cx += (Math.sin(now * 0.31) * 0.6 + Math.sin(now * 0.13 + 2.1) * 0.4) * amp;
-          cy += (Math.sin(now * 0.23 + 1.3) * 0.6 + Math.sin(now * 0.11 + 4.2) * 0.4) * amp;
+
+        // The wander amplitude is a multiple of the hole's own radius, never a
+        // fraction of the screen. At eight pixels across it used to swing 128
+        // pixels either way — sixteen times its own size, which reads as a
+        // jitter rather than as drift. Tying it to the radius means a small
+        // hole barely stirs and a large one moves with weight.
+        if (!input.reducedMotion && advance > 0) {
+          const settle = 1 - 0.55 * shaped;                // calms as it fills
+          const amp = Math.min(radius * 1.4, minEdge * 0.06) * settle;
+          cx += (Math.sin(now * WANDER_HZ) * 0.6
+               + Math.sin(now * WANDER_HZ * 0.42 + 2.1) * 0.4) * amp;
+          cy += (Math.sin(now * WANDER_HZ * 0.74 + 1.3) * 0.6
+               + Math.sin(now * WANDER_HZ * 0.35 + 4.2) * 0.4) * amp;
         }
 
         const birth = clamp01((now - this.bornAt) / BIRTH_SECONDS);
