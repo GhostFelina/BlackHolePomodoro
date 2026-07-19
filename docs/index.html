@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BlackHolock — nothing escapes the break</title>
+    <meta
+      name="description"
+      content="A focus timer with a gravitational deadline. A ray-traced black hole grows on your screen, bending your desktop around it, until it takes your break for you. Free, open source, no telemetry."
+    />
+
+    <meta property="og:title" content="BlackHolock — nothing escapes the break" />
+    <meta
+      property="og:description"
+      content="A focus timer with a gravitational deadline. Free, open source, no telemetry."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="media/preview.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="icon" href="media/icon-256.png" />
+
+    <style>
+      /*
+       * One file, no build step, no dependencies. It is served straight from
+       * the repository by GitHub Pages, which means the site can never be out
+       * of date with the release it describes — they are the same commit.
+       */
+      :root {
+        --bg: #05060a;
+        --panel: #0b0d14;
+        --line: rgba(255, 255, 255, 0.08);
+        --text: #e8eaf0;
+        --dim: rgba(232, 234, 240, 0.62);
+        --faint: rgba(232, 234, 240, 0.34);
+        --accent: #ff9e42;
+        color-scheme: dark;
+      }
+
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: -apple-system, "Segoe UI", Inter, system-ui, sans-serif;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .wrap { max-width: 940px; margin: 0 auto; padding: 0 24px; }
+
+      /* ------------------------------------------------------------- hero */
+
+      header {
+        position: relative;
+        text-align: center;
+        padding: 96px 0 72px;
+        overflow: hidden;
+      }
+
+      /* A still of the real render rather than an illustration of one. */
+      header::before {
+        content: "";
+        position: absolute;
+        inset: -20% -10% auto;
+        height: 130%;
+        background: url("media/preview.png") center/cover no-repeat;
+        opacity: 0.30;
+        filter: blur(2px);
+        mask-image: radial-gradient(ellipse at center, #000 20%, transparent 72%);
+        pointer-events: none;
+      }
+
+      header > * { position: relative; }
+
+      .mark {
+        width: 92px; height: 92px;
+        margin: 0 auto 26px;
+        display: block;
+      }
+
+      h1 {
+        font-size: clamp(2.4rem, 6vw, 3.6rem);
+        font-weight: 700;
+        letter-spacing: -0.03em;
+      }
+
+      .motto {
+        color: var(--accent);
+        font-size: 1.05rem;
+        margin-top: 10px;
+        letter-spacing: 0.01em;
+      }
+
+      .lede {
+        max-width: 36rem;
+        margin: 22px auto 0;
+        color: var(--dim);
+        font-size: 1.08rem;
+        text-wrap: balance;
+      }
+
+      .actions {
+        display: flex; flex-wrap: wrap; gap: 12px;
+        justify-content: center;
+        margin-top: 34px;
+      }
+
+      a.btn {
+        padding: 11px 22px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        color: var(--text);
+        text-decoration: none;
+        font-size: 0.95rem;
+        transition: border-color 160ms, background-color 160ms, color 160ms;
+      }
+      a.btn:hover { border-color: rgba(255, 158, 66, 0.5); color: var(--accent); }
+      a.btn.primary {
+        background: rgba(255, 158, 66, 0.14);
+        border-color: rgba(255, 158, 66, 0.45);
+        color: var(--accent);
+      }
+      a.btn.primary:hover { background: rgba(255, 158, 66, 0.24); }
+
+      .note { color: var(--faint); font-size: 0.85rem; margin-top: 14px; }
+
+      /* --------------------------------------------------------- sections */
+
+      section { padding: 60px 0; border-top: 1px solid var(--line); }
+
+      h2 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        margin-bottom: 8px;
+      }
+
+      .sub { color: var(--faint); margin-bottom: 28px; }
+
+      p + p { margin-top: 14px; }
+      p { color: var(--dim); max-width: 58ch; }
+
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.92em;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 1px 6px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 14px;
+        margin-top: 26px;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 18px 20px;
+      }
+      .card h3 { font-size: 0.98rem; font-weight: 600; margin-bottom: 6px; }
+      .card p { font-size: 0.9rem; color: var(--faint); max-width: none; }
+
+      figure { margin-top: 30px; }
+      figure img {
+        width: 100%;
+        border-radius: 14px;
+        border: 1px solid var(--line);
+        display: block;
+      }
+      figcaption {
+        color: var(--faint);
+        font-size: 0.85rem;
+        margin-top: 10px;
+        text-align: center;
+      }
+
+      .shots {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 14px;
+        margin-top: 26px;
+      }
+      .shots img {
+        width: 100%;
+        border-radius: 12px;
+        border: 1px solid var(--line);
+        display: block;
+      }
+
+      footer {
+        border-top: 1px solid var(--line);
+        padding: 34px 0 56px;
+        color: var(--faint);
+        font-size: 0.88rem;
+        text-align: center;
+      }
+      footer a { color: var(--dim); }
+
+      .langs { margin-top: 8px; color: var(--faint); font-size: 0.85rem; }
+
+      @media (prefers-reduced-motion: reduce) {
+        * { transition: none !important; }
+      }
+    </style>
+  </head>
+
+  <body>
+    <header>
+      <img class="mark" src="media/mark-512.png" alt="" />
+      <h1>BlackHolock</h1>
+      <p class="motto">Nothing escapes the break.</p>
+      <p class="lede">
+        A focus timer with a gravitational deadline. Work, and a black hole is
+        born on your screen — it grows every second, bending your desktop
+        around it, until it swallows the display and takes your break for you.
+      </p>
+
+      <div class="actions">
+        <a class="btn primary" href="https://github.com/GhostFelina/BlackHolePomodoro/releases">Download</a>
+        <a class="btn" href="https://github.com/GhostFelina/BlackHolePomodoro">Source on GitHub</a>
+      </div>
+      <p class="note">macOS and Windows · MIT licensed · no accounts, no telemetry</p>
+    </header>
+
+    <div class="wrap">
+      <section>
+        <h2>Why it works</h2>
+        <p class="sub">Every break reminder can be dismissed with one click, so every break reminder gets dismissed.</p>
+        <p>
+          BlackHolock removes the click. Instead of a notification you can
+          ignore, an object appears and grows. At first it is a few pixels wide
+          and easy to work around. Five minutes later it has eaten everything.
+          You do not decide to take the break — the break arrives, the way
+          gravity arrives.
+        </p>
+        <p>
+          The pressure is visual and continuous rather than a sudden
+          interruption, so you get several minutes of warning to reach a natural
+          stopping point in whatever you are doing.
+        </p>
+
+        <figure>
+          <img src="media/preview.png" alt="The Gargantua effect mid-countdown" />
+          <figcaption>Gargantua, mid-countdown. Ray-traced geodesics, volumetric disc, two-scale bloom.</figcaption>
+        </figure>
+      </section>
+
+      <section>
+        <h2>The black hole is computed, not drawn</h2>
+        <p class="sub">Photon paths integrated through curved spacetime, every frame, on your GPU.</p>
+        <p>
+          For each pixel the shader integrates the orbit a photon actually
+          follows, <code>d²u/dφ² + u = (3/2)·rs·u²</code>. The shadow, the
+          photon ring, the disc lensed over the top of the hole and the arcs
+          your own windows are bent into all fall out of that integration
+          rather than being painted on top of it.
+        </p>
+        <p>
+          The disc is symmetric on purpose. A complete render applies
+          relativistic Doppler beaming, and Interstellar switched it off so the
+          image would read clearly — BlackHolock exposes that decision as a
+          slider rather than hiding it.
+        </p>
+
+        <div class="shots">
+          <img src="media/style-inferno.png" alt="Inferno style" />
+          <img src="media/style-halo.png" alt="Halo style" />
+        </div>
+      </section>
+
+      <section>
+        <h2>Ten ways to lose your screen</h2>
+        <p class="sub">Not everyone wants a black hole.</p>
+        <div class="grid">
+          <div class="card"><h3>Gargantua</h3><p>The film's grade: cream and white, near edge-on, warm field behind it.</p></div>
+          <div class="card"><h3>Inferno</h3><p>A simulation still in red and amber against empty black.</p></div>
+          <div class="card"><h3>Halo</h3><p>A vast dark sphere ringed with light in a cool nebula field.</p></div>
+          <div class="card"><h3>Prism</h3><p>Light split into rainbow bands as it bends past the horizon.</p></div>
+          <div class="card"><h3>Rain</h3><p>Droplets gather on the glass until the screen is not worth reading.</p></div>
+          <div class="card"><h3>Snow</h3><p>A drift climbs from the bottom until your work is buried.</p></div>
+          <div class="card"><h3>Flood</h3><p>The water rises and your work goes under, lit by caustics.</p></div>
+          <div class="card"><h3>Quake</h3><p>Cracks spread and the pieces stop lining up.</p></div>
+          <div class="card"><h3>Eclipse</h3><p>A calm dark disc with a thin corona. Minimal and quiet.</p></div>
+          <div class="card"><h3>Void Field</h3><p>No object at all — the screen simply drains into darkness.</p></div>
+        </div>
+      </section>
+
+      <section>
+        <h2>It costs nothing when nothing is happening</h2>
+        <p class="sub">Which is most of the time.</p>
+        <p>
+          The overlay windows are created at the start of a countdown and
+          destroyed at the end of one, and the render loop is torn down the
+          moment there is nothing to draw. During the 45 minutes of a focus
+          period the app is a menu-bar icon and a timer.
+        </p>
+        <p>
+          While the effect is on screen the buffer scales itself toward a
+          frame-time budget, so a hole covering the whole display costs about
+          what one covering a corner does. Adaptive, measured with real GPU
+          timing rather than guessed at.
+        </p>
+      </section>
+
+      <section>
+        <h2>Nothing leaves your machine</h2>
+        <p class="sub">There is nothing to leave.</p>
+        <p>
+          No accounts, no servers, no analytics, no crash reporting, no
+          identifiers. One settings file on your own disk. The only request the
+          app can make is an optional version check you can switch off.
+        </p>
+        <p>
+          Screen frames used for the lensing effect never leave the GPU: never
+          written to disk, never encoded, never transmitted. The capture stops
+          the moment the effect leaves your screen.
+        </p>
+        <p>
+          <a href="https://github.com/GhostFelina/BlackHolePomodoro/blob/main/docs/legal/PRIVACY.md">Privacy policy</a>
+          ·
+          <a href="https://github.com/GhostFelina/BlackHolePomodoro/blob/main/docs/legal/TERMS.md">Terms of use</a>
+        </p>
+      </section>
+    </div>
+
+    <footer>
+      <p>
+        <a href="https://github.com/GhostFelina/BlackHolePomodoro">GitHub</a> ·
+        <a href="https://github.com/GhostFelina/BlackHolePomodoro/releases">Releases</a> ·
+        MIT licensed
+      </p>
+      <p class="langs">
+        English · Türkçe · Español · Deutsch · Italiano · Português · Русский ·
+        العربية · 日本語 · 한국어 · 简体中文
+      </p>
+    </footer>
+  </body>
+</html>

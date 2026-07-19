@@ -105,11 +105,13 @@ above them updates as you drag.
 
 - **Physically ray-traced lensing** at your display's true refresh rate, 120 Hz
   ProMotion included.
-- **Six effects, and a plug-in architecture for more.** Four black holes —
+- **Ten effects, and a plug-in architecture for more.** Four black holes —
   Gargantua (the film's grade), Inferno (a simulation still in red and amber),
   Halo (a dark sphere ringed with light in a cool nebula field) and Prism
-  (dispersion split into rainbow bands) — plus Eclipse for something calm and
-  Void Field for machines with no GPU budget. The four holes are variations of
+  (dispersion split into rainbow bands) — four weather events — Rain, Snow, Flood
+  and Quake, each of which takes the screen a different way and costs a quarter
+  of what a ray-marched hole does — plus Eclipse for something calm and Void
+  Field for machines with no GPU budget. The four holes are variations of
   one shader selected by a uniform, so they share a compiled program and cost
   the same to draw.
 - **The desktop is pulled in, not just bent.** Sampling of your captured screen
@@ -215,6 +217,12 @@ very welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 - More effects: a collapsing star, a slow tide, a solar eclipse
 - Session history, kept entirely on-device
 - Optional per-app rules
+
+## Website
+
+<https://ghostfelina.github.io/BlackHolePomodoro/> — served straight from
+`docs/` in this repository, so the site can never describe a release it is not
+built from.
 
 ## Licence
 
