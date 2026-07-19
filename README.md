@@ -91,18 +91,41 @@ Every number is yours to change: focus length, break length, and how early the
 hole appears. The defaults are 50 / 10 with a 5-minute countdown; presets for
 25/5 and 90/15 are one click away.
 
+The hole holds **completely still** for the first 30 % of the countdown, then
+grows exponentially rather than linearly. On a five-minute window that is seven
+pixels across and motionless for the first ninety seconds, sixteen pixels at
+three minutes, and the whole screen in the last sixty seconds — a distant object
+you noticed, not an animation playing at you.
+
+Nine colours, disc brightness and rotation, viewing angle, Doppler amount, star
+density, nebula brightness, glow and suction are all sliders, and the preview
+above them updates as you drag.
+
 ## Features
 
 - **Physically ray-traced lensing** at your display's true refresh rate, 120 Hz
   ProMotion included.
-- **Three effects, and a plug-in architecture for more.** Gargantua for the full
-  show, Eclipse for something calm, Void Field for machines with no GPU budget.
-  Adding a new one is a single file plus one line in the registry.
+- **Six effects, and a plug-in architecture for more.** Four black holes —
+  Gargantua (the film's grade), Inferno (a simulation still in red and amber),
+  Halo (a dark sphere ringed with light in a cool nebula field) and Prism
+  (dispersion split into rainbow bands) — plus Eclipse for something calm and
+  Void Field for machines with no GPU budget. The four holes are variations of
+  one shader selected by a uniform, so they share a compiled program and cost
+  the same to draw.
+- **The desktop is pulled in, not just bent.** Sampling of your captured screen
+  winds around the hole and draws inward, falling off as 1/r¹·⁴ and scaling with
+  the countdown, so your windows visibly spiral toward it as the break nears.
+- **Live preview in the settings.** The Appearance panel runs the same renderer
+  the overlay uses, so what you tune is exactly what you will see.
 - **Multi-display.** Every screen is covered, so you cannot simply look at the
   other monitor.
+- **The break opens onto deep space.** Nebulae, a dense star bed and slow
+  meteors, with a countdown in the middle — deliberately dim, because the point
+  of those ten minutes is to rest your eyes.
 - **Three strictness levels.** From "dismiss it instantly" to "no way out".
   In the middle, the skip button appears late and asks twice — a stray click can
-  never cost you a break.
+  never cost you a break. Escape summons it immediately for anyone who genuinely
+  needs out.
 - **11 languages**, switchable instantly with no restart, including full
   right-to-left layout for Arabic.
 - **Accessibility built in.** Reduce-motion, an intensity dial, and a
@@ -158,6 +181,13 @@ throttling a background window or dropping frames cannot make the timer drift.
 sync state only when something changes, then evaluates it locally every frame.
 There is no per-frame IPC, which is what lets the animation stay smooth at
 120 Hz.
+
+**Nothing runs when nothing is drawn.** The overlay windows are created at the
+start of a countdown and destroyed at the end of one, and the render loop is
+torn down the moment there is nothing to show. Idle cost during the 45 minutes
+of focus is zero, not merely small. On top of that the buffer scales itself
+toward a frame-time budget, so a hole covering the whole display costs about the
+same as one covering a corner.
 
 ## Privacy
 
