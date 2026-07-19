@@ -1,4 +1,5 @@
 export { EffectRenderer, type RendererOptions, type RendererStats } from './gl/Renderer.js';
+export { BloomPipeline } from './gl/postfx.js';
 export { ACCENT_RGB, accentToCss, accentToRgb } from './gl/accents.js';
 export {
   Choreographer,

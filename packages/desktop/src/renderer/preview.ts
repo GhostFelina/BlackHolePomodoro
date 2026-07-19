@@ -70,7 +70,10 @@ function buildFakeDesktop(width: number, height: number): HTMLCanvasElement {
   return c;
 }
 
-const renderer = new EffectRenderer(canvas, { maxRenderEdge: 3200 });
+const renderer = new EffectRenderer(canvas, {
+  maxRenderEdge: 3200,
+  bloom: Number(params.get('bloom') ?? 1),
+});
 if (!renderer.isAvailable) {
   hud.textContent = 'WebGL 2 unavailable on this machine.';
   throw new Error('no webgl2');

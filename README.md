@@ -56,13 +56,26 @@ top of it:
 | **The shadow** | Rays with impact parameter below 3√3/2·rs are captured and never return. The result is true `#000000` — an actually unlit pixel on OLED. |
 | **The disc over the top** | The accretion disc is flat and edge-on, but light bends far enough that you see its *far side* above and below the hole. This is the Interstellar silhouette, and it emerges from the maths. |
 | **The photon ring** | Light that orbits the hole before escaping, piling up at the critical radius. |
-| **One side brighter** | Relativistic Doppler beaming. Disc material orbits at a large fraction of *c*; the side rotating toward you is blueshifted and brightened. |
-| **The reddened inner edge** | Gravitational redshift — light loses energy climbing out of the well by √(1 − rs/r). |
+| **The filaments shearing** | The disc is a slab with real thickness that rays integrate *through*, not a thin plane coloured at one point. Structure rotates differentially, so inner material laps outer material. |
 | **Your bent desktop** | Your real screen is captured into GPU memory and sampled along the *deflected* ray, so your windows and text curve around the hole exactly as starlight would. |
+| **The glow around it** | A two-scale bloom pass, so light spills past its own edges the way it does through a real lens. Without it a bright disc is merely pale; with it, it is luminous. |
+
+### Why the disc is symmetric
+
+A complete render applies relativistic Doppler beaming and gravitational
+frequency shift to the orbiting material. Both are real. Both were deliberately
+switched off for the film — Kip Thorne's account of the decision is that with
+them on, *"the right side of the disk becomes so dark you can hardly see it, and
+the left side becomes so bright that it dominates in a really puzzling way."*
+Double Negative could render it correctly; Nolan chose clarity.
+
+BlackHolock exposes that decision as a number rather than hiding it.
+`DOPPLER_MIX` ships at 0.12: enough asymmetry to read as a rotating object, far
+short of drowning one side. Set it to 1.0 for the physically complete image.
 
 <div align="center">
 <img src="docs/media/preview.png" width="820" alt="Gargantua at three stages of growth" />
-<br><em>The same shader at 12 %, 35 % and 65 % of the countdown.</em>
+<br><em>The shipped shader, mid-countdown. Ray-traced geodesics, volumetric disc, two-scale bloom.</em>
 </div>
 
 ## How a cycle works
@@ -115,8 +128,13 @@ git clone https://github.com/GhostFelina/BlackHolePomodoro.git
 cd BlackHolePomodoro
 npm install
 npm run dev          # run it
+npm run preview      # live effect preview, no waiting for a cycle
 npm run dist         # build installers for the current platform
 ```
+
+`npm run preview` opens the shipped shader in a window with size, effect and
+lensing controls and a live frame-rate readout — the fastest way to judge a
+change to the visuals.
 
 Requires Node 20+.
 

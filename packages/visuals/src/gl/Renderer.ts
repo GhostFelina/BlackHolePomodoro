@@ -1,4 +1,5 @@
 import { FRAGMENT_PREAMBLE, type EffectFrameContext, type FocusEffect } from '../effects/types.js';
+import { BloomPipeline } from './postfx.js';
 
 /**
  * The WebGL 2 renderer behind every effect.
@@ -59,6 +60,8 @@ export interface RendererOptions {
   onContextLost?: () => void;
   /** Called once if WebGL 2 is unavailable at all. */
   onUnavailable?: (reason: string) => void;
+  /** Bloom intensity. 0 disables the post chain entirely. */
+  bloom?: number;
 }
 
 export interface RendererStats {
@@ -91,6 +94,7 @@ export class EffectRenderer {
   private droppedFrames = 0;
 
   private provider: (() => EffectFrameContext | null) | null = null;
+  private bloom: BloomPipeline | null = null;
 
   constructor(canvas: HTMLCanvasElement, options: RendererOptions = {}) {
     this.canvas = canvas;
@@ -118,6 +122,9 @@ export class EffectRenderer {
     // Source is premultiplied, so the classic (ONE, 1-SRC_ALPHA) pairing.
     this.gl.blendFunc(this.gl.ONE, this.gl.ONE_MINUS_SRC_ALPHA);
     this.gl.clearColor(0, 0, 0, 0);
+
+    this.bloom = new BloomPipeline(this.gl);
+    this.bloom.strength = options.bloom ?? 1.0;
 
     canvas.addEventListener('webglcontextlost', this.handleContextLost, false);
   }
@@ -255,6 +262,7 @@ export class EffectRenderer {
       this.canvas.width = width;
       this.canvas.height = height;
       gl.viewport(0, 0, width, height);
+      this.bloom?.resize(width, height);
     }
     this.canvas.style.width = `${cssWidth}px`;
     this.canvas.style.height = `${cssHeight}px`;
@@ -344,8 +352,16 @@ export class EffectRenderer {
     const compiled = this.current;
     if (!compiled) return;
 
+    // With bloom on, the effect renders into an offscreen buffer first; the
+    // chain then composites it, plus its glow, onto the screen.
+    const offscreen = this.bloom?.beginScene() ?? false;
+    if (!offscreen) {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+    }
+
     gl.useProgram(compiled.program);
-    gl.clear(gl.COLOR_BUFFER_BIT);
 
     const hasScreen = context.hasScreenTexture && this.uploadScreenFrame();
     const u = compiled.uniforms;
@@ -363,6 +379,13 @@ export class EffectRenderer {
     if (u.uScreen) gl.uniform1i(u.uScreen, 0);
 
     gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+    if (offscreen) this.bloom!.finish();
+  }
+
+  /** Adjusts bloom at runtime; 0 turns the post chain off. */
+  setBloom(strength: number): void {
+    if (this.bloom) this.bloom.strength = Math.max(0, strength);
   }
 
   private medianFrameTime(): number {
@@ -400,6 +423,8 @@ export class EffectRenderer {
     this.programs.clear();
     if (this.screenTexture) gl.deleteTexture(this.screenTexture);
     this.screenTexture = null;
+    this.bloom?.dispose();
+    this.bloom = null;
   }
 }
 

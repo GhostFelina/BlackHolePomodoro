@@ -164,10 +164,13 @@ void main() {
       // Two scales of filament: broad streams, then fine structure inside them.
       vec2  uvA = vec2(sw * 0.85, rd * 0.42);
       vec2  uvB = vec2(sw * 3.10, rd * 1.55);
-      float fil = warpedFbm(uvA) * 0.68 + fbm(uvB) * 0.32;
-      // Squared then stretched: widens the gap between bright streams and the
-      // gaps between them, which is what makes filaments read as filaments.
-      fil = 0.14 + 1.85 * fil * fil;
+      // Ridged noise rather than plain fbm: taking |2n-1| and inverting it
+      // turns smooth hills into creases, which is what gives an accretion disc
+      // its defined lanes instead of a uniform fog.
+      float base   = warpedFbm(uvA);
+      float ridge  = 1.0 - abs(2.0 * fbm(uvB) - 1.0);
+      float fil    = base * 0.60 + ridge * ridge * 0.40;
+      fil = 0.10 + 2.05 * fil * fil;
 
       // Radial brightness: bright inner rim falling off outward.
       float profile = pow(1.0 - t, 1.9);
@@ -189,7 +192,7 @@ void main() {
         emission *= mix(1.0, full, DOPPLER);
       }
 
-      disc += emission * dt * 1.05;
+      disc += emission * dt * 0.92;
     }
 
     vec3 acc = -1.5 * h2 * pos / (r2 * r2 * r);
@@ -225,17 +228,28 @@ void main() {
     // once directly, once smeared into an Einstein arc.
     vec2 sky = vec2(atan(outDir.z, outDir.x), asin(clamp(outDir.y, -1.0, 1.0)));
 
-    for (int layer = 0; layer < 2; layer++) {
-      float scale = layer == 0 ? 62.0 : 108.0;
+    // Three layers with a steep brightness distribution: many faint stars,
+    // few bright ones. A flat cutoff gives every star the same magnitude and
+    // reads immediately as a texture rather than a sky.
+    for (int layer = 0; layer < 3; layer++) {
+      float scale = 54.0 + float(layer) * 46.0;
       vec2  cell  = floor(sky * scale);
       float rnd   = hash21(cell + float(layer) * 31.7);
-      if (rnd > 0.9775) {
+      if (rnd > 0.968) {
+        // Remap the tail of the hash into a magnitude, then cube it so the
+        // bright end is rare.
+        float mag   = (rnd - 0.968) / 0.032;
+        float bright = mag * mag * mag;
+
         vec2  local = fract(sky * scale) - 0.5;
-        float tw    = 0.72 + 0.28 * sin(uTime * 1.3 + rnd * 83.0);
-        float point = exp(-dot(local, local) * (layer == 0 ? 130.0 : 260.0)) * tw;
-        vec3  tint  = mix(vec3(0.76, 0.84, 1.0), vec3(1.0, 0.90, 0.74),
-                          hash11(rnd * 27.1));
-        background += tint * point * (layer == 0 ? 1.25 : 0.75);
+        float tw    = 0.78 + 0.22 * sin(uTime * 1.1 + rnd * 83.0);
+        float core  = exp(-dot(local, local) * mix(420.0, 150.0, bright));
+        // A faint cross-shaped flare on the brightest stars only.
+        float flare = bright * exp(-abs(local.x) * 46.0) * exp(-abs(local.y) * 46.0);
+
+        vec3 tint = mix(vec3(0.72, 0.81, 1.0), vec3(1.0, 0.88, 0.70),
+                        hash11(rnd * 27.1));
+        background += tint * (core + flare * 0.35) * tw * (0.35 + 1.5 * bright);
       }
     }
 
@@ -243,6 +257,15 @@ void main() {
     vec3  nebula = mix(vec3(0.013, 0.018, 0.044), vec3(0.070, 0.034, 0.094), clouds);
     background += nebula * smoothstep(0.40, 0.95, clouds) * 0.75;
   }
+
+  // --------------------------------------------------------- photon ring
+  // Light that orbited the hole one or more times before escaping piles up at
+  // the critical impact parameter. It is the brightest, sharpest feature in a
+  // real image and it was previously a hairline lost against the disc, so it
+  // is reinforced here rather than left to emerge from the march alone.
+  float ringR = rs * 1.005;
+  float ring  = exp(-pow((rPix - ringR) / (rs * 0.028), 2.0));
+  disc += vec3(1.00, 0.95, 0.86) * ring * 0.26;
 
   disc     *= lensStrength;
   captured *= lensStrength;
