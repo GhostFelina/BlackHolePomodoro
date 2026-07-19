@@ -1,0 +1,113 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Cancel superseded runs on the same branch — a push while CI is mid-build
+# should not leave two builds racing.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Fast feedback: types, unit tests and the locale completeness check run once
+  # on Linux before anything expensive starts.
+  verify:
+    name: Typecheck & tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Typecheck
+        run: npx tsc --build
+      - name: Locale completeness
+        run: node scripts/check-locales.mjs
+      - name: Unit tests
+        run: npm test --workspaces --if-present
+
+  # The real cross-platform proof: the app is packaged on both operating
+  # systems it claims to support. A macOS-only assumption that crept into the
+  # code fails here rather than in a user's hands.
+  package:
+    name: Package (${{ matrix.os }})
+    needs: verify
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Regenerate brand assets
+        run: npm run brand:icons
+
+      - name: Build renderer, preload and main
+        run: npm run build --workspace @blackholock/desktop
+
+      # Builds are intentionally unsigned in CI. Signing needs secrets that must
+      # not be exposed to pull requests from forks; release signing happens in
+      # the release workflow instead.
+      - name: Package installers
+        working-directory: packages/desktop
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+          GH_TOKEN: ''
+        run: npx electron-builder --publish never
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: blackholock-${{ matrix.os }}
+          path: |
+            packages/desktop/release/*.dmg
+            packages/desktop/release/*.zip
+            packages/desktop/release/*.exe
+            packages/desktop/release/*.AppImage
+          if-no-files-found: warn
+          retention-days: 14
+
+  # Renders the shipped shader offscreen and uploads the image, so a change
+  # that breaks the effect is visible in the PR without anyone installing it.
+  shader-preview:
+    name: Shader preview
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build --workspace @blackholock/desktop
+
+      - name: Render preview
+        working-directory: packages/desktop
+        # xvfb gives the headless runner a display; SwiftShader provides a
+        # software GL implementation so no GPU is required.
+        run: |
+          xvfb-run --auto-servernum npx electron scripts/capture-preview.mjs \
+            preview.png "effect=gargantua&lensing=1&growth=0.12,0.35,0.65" \
+            --no-sandbox
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shader-preview
+          path: packages/desktop/preview.png
+          if-no-files-found: error

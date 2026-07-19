@@ -1,0 +1,100 @@
+appId: com.ghostfelina.blackholock
+productName: BlackHolock
+copyright: Copyright © 2026 GhostFelina
+
+# Pinned explicitly: in an npm workspace Electron is hoisted to the root, and
+# electron-builder cannot infer the version from a semver range alone.
+electronVersion: 33.4.11
+
+directories:
+  output: release
+  buildResources: resources
+
+# The workspace packages are compiled into the bundle by electron-vite, so the
+# shipped app needs nothing from node_modules. That keeps the installer small
+# and removes any chance of a version mismatch between source and build.
+files:
+  - out/**/*
+  - resources/**/*
+  - '!**/*.map'
+
+asar: true
+
+# Everything is bundled by electron-vite and there are no native modules, so
+# electron-builder has nothing to rebuild. Leaving this on makes it run an
+# install inside the package, which prunes the workspace's hoisted
+# node_modules and deletes electron-builder's own helper binary mid-build.
+npmRebuild: false
+buildDependenciesFromSource: false
+
+# ---------------------------------------------------------------------- macOS
+mac:
+  category: public.app-category.productivity
+  icon: resources/icon.png
+  target:
+    - target: dmg
+      arch: [arm64, x64]
+    - target: zip
+      arch: [arm64, x64]
+  # A menu-bar app has no Dock presence and no main window.
+  extendInfo:
+    LSUIElement: true
+    NSScreenCaptureUsageDescription: >-
+      BlackHolock reads the screen only to bend it around the black hole while
+      it is on display. Frames stay in graphics memory: they are never saved,
+      encoded, or sent anywhere.
+  # Unsigned builds still run, but macOS will warn on first launch. Set
+  # CSC_LINK and CSC_KEY_PASSWORD in the environment to sign properly.
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: resources/entitlements.mac.plist
+  entitlementsInherit: resources/entitlements.mac.plist
+
+dmg:
+  artifactName: ${productName}-${version}-${arch}.${ext}
+  contents:
+    - x: 140
+      y: 200
+      type: link
+      path: /Applications
+    - x: 400
+      y: 200
+      type: file
+
+# -------------------------------------------------------------------- Windows
+win:
+  icon: resources/icon.png
+  target:
+    - target: nsis
+      arch: [x64, arm64]
+    - target: portable
+      arch: [x64]
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: BlackHolock
+  artifactName: ${productName}-Setup-${version}-${arch}.${ext}
+
+portable:
+  artifactName: ${productName}-${version}-portable.${ext}
+
+# ---------------------------------------------------------------------- Linux
+# Not an officially supported target yet, but the code has no macOS- or
+# Windows-only paths that would prevent it, so the build is left enabled.
+linux:
+  icon: resources/icon.png
+  category: Utility
+  target:
+    - AppImage
+
+# Update metadata points at the public releases feed. The app itself only ever
+# reads the version number; it never downloads or installs anything on its own.
+publish:
+  provider: github
+  owner: GhostFelina
+  repo: BlackHolePomodoro
+  releaseType: release

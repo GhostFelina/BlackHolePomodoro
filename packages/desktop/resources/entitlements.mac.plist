@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  Electron needs these two under the hardened runtime; without them the app
+	  crashes on launch on signed builds.
+	-->
+	<key>com.apple.security.cs.allow-jit</key>
+	<true/>
+	<key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+	<true/>
+
+	<!--
+	  Screen capture for the lensing effect. The app is not sandboxed, so this
+	  is declarative rather than a sandbox exception, but it documents intent
+	  and is required if the app is ever submitted to the Mac App Store.
+	-->
+	<key>com.apple.security.device.screen-capture</key>
+	<true/>
+</dict>
+</plist>
