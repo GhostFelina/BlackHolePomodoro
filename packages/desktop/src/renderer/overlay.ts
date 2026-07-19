@@ -234,6 +234,25 @@ function frame(): ReturnType<Choreographer['frame']> {
 
 // --------------------------------------------------------------------- wiring
 
+/**
+ * Escape reveals the skip control early.
+ *
+ * The button is deliberately slow to appear so a stray click cannot end a
+ * break. That is right for the mouse, but someone who genuinely needs out —
+ * a call, an alarm, a meeting — should not have to wait and hunt for it.
+ * Escape is a deliberate, unambiguous keystroke, so it arms the control
+ * immediately. It still asks for confirmation; it only skips the waiting.
+ */
+window.addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape') return;
+  if (choreographer.getStage() !== 'blackout') return;
+  if (settings?.strictness === 'strict') return;
+
+  skipArmedAt = 0;
+  skipButton.classList.add('ready', 'summoned');
+  skipButton.focus();
+});
+
 skipButton.addEventListener('click', () => {
   if (Date.now() < skipArmedAt) return;      // still disarmed
   if (Date.now() < skipConfirmUntil) {

@@ -140,7 +140,7 @@ function frame(): EffectFrameContext | null {
     radius,
     growth: state.growth,
     intensity: state.intensity,
-    blackout: 0,
+    blackout: Number(params.get('blackout') ?? 0),
     hasScreenTexture: state.lensing && getEffect(state.effectId).supportsScreenLensing,
     accent: accentToRgb(state.accent),
     reducedMotion: false,

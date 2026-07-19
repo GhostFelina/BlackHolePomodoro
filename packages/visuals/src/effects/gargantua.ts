@@ -234,6 +234,63 @@ vec3 deepSky(vec2 sky, float time) {
   return sky3 + stars * uStarDensity;
 }
 
+/**
+ * The break scene.
+ *
+ * During a break the screen used to be flat #000000 with a countdown on it.
+ * That does the job but wastes the one moment the app has the whole display —
+ * so instead it opens onto the field: nebulae, a dense star bed, a few slow
+ * meteors, and the hole itself far away where it can no longer reach you.
+ *
+ * It is deliberately dim. This is meant to rest the eyes for ten minutes, so
+ * the brightest pixel here sits far below the brightest pixel of the disc.
+ */
+vec3 breakScene(vec2 uv, vec2 res, float time) {
+  vec2  p = (uv - 0.5) * vec2(res.x / res.y, 1.0);
+  float dist = length(p);
+
+  // Planar coordinates, not polar. Feeding angle-and-radius into the sky put a
+  // singularity at the centre of the screen where every angle converges, which
+  // rendered as a starburst of streaks radiating from the middle.
+  vec2 sky = p * 2.1 + vec2(time * 0.006, time * 0.004);
+
+  vec3 field = deepSky(sky, time) * 1.35;
+
+  // A cool cast: away from the disc there is nothing to make the sky warm.
+  float lum = dot(field, vec3(0.30, 0.59, 0.11));
+  field = mix(field, vec3(0.30, 0.42, 0.86) * lum * 1.30, 0.55);
+
+  // --- meteors -------------------------------------------------------------
+  // Three lanes, each firing on its own slow cycle. A streak is a distance to
+  // a line segment, which is a few instructions rather than a particle buffer.
+  for (int i = 0; i < 3; i++) {
+    float fi    = float(i);
+    float cycle = 9.0 + fi * 4.5;
+    float phase = fract((time + fi * 3.1) / cycle);
+    float seed  = floor((time + fi * 3.1) / cycle) + fi * 17.0;
+
+    // Each pass picks a fresh entry point and heading.
+    vec2  from = vec2(hash11(seed) * 2.2 - 1.1, hash11(seed + 5.0) * 1.4 - 0.7);
+    vec2  dir  = normalize(vec2(-0.85, -0.30 - hash11(seed + 9.0) * 0.5));
+    float trav = phase * 2.4;
+
+    vec2  head = from + dir * trav;
+    vec2  tail = head - dir * 0.20;
+
+    // Distance from this pixel to the head-tail segment.
+    vec2  seg = head - tail;
+    float t   = clamp(dot(p - tail, seg) / max(dot(seg, seg), 1e-5), 0.0, 1.0);
+    float d   = length(p - (tail + seg * t));
+
+    // Bright at the head, fading down the tail; fades in and out over the pass.
+    float streak = exp(-d * 320.0) * t;
+    float alive  = smoothstep(0.0, 0.10, phase) * (1.0 - smoothstep(0.72, 1.0, phase));
+    field += vec3(0.85, 0.92, 1.00) * streak * alive * 0.85;
+  }
+
+  return field;
+}
+
 void main() {
   vec2  pixel = vUv * uResolution;
   vec2  d     = pixel - uCenter;
@@ -242,7 +299,16 @@ void main() {
 
   float influence = rs * ${8.0.toFixed(1)};
   if (rPix > influence && uBlackout < 0.001) { fragColor = vec4(0.0); return; }
-  if (uBlackout > 0.999) { fragColor = vec4(0.0, 0.0, 0.0, 1.0); return; }
+  if (uBlackout > 0.999) {
+    vec3 scene = breakScene(vUv, uResolution, uTime);
+    // Vignette: keeps the edges of a large display calm and puts the weight in
+    // the middle, where the countdown sits.
+    vec2 v = (vUv - 0.5) * vec2(uResolution.x / uResolution.y, 1.0);
+    scene *= 1.0 - smoothstep(0.35, 0.95, length(v)) * 0.55;
+    scene = scene / (1.0 + scene * 0.9);
+    fragColor = vec4(scene, 1.0);
+    return;
+  }
 
   // ---------------------------------------------------------------- camera
   // uRadius is the on-screen radius the shadow occupies, so the angular scale
