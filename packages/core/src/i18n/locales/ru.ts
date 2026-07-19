@@ -156,6 +156,8 @@ export const ru: Messages = {
   'effect.halo.description': 'Огромная тёмная сфера в кольце тёплого света, в глубоком цветном поле.',
   'effect.prism.name': 'Призма',
   'effect.prism.description': 'Свет, распадающийся на радужные полосы при изгибе у горизонта.',
+  'effect.rain.name': 'Дождь',
+  'effect.rain.description': 'Капли собираются на стекле, пока экран не перестанет стоить чтения.',
   'effect.eclipse.name': 'Затмение',
   'effect.eclipse.description': 'Спокойный тёмный диск с тонкой короной. Минимально и тихо.',
   'effect.voidfield.name': 'Поле Пустоты',

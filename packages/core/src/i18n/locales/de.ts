@@ -156,6 +156,8 @@ export const de: Messages = {
   'effect.halo.description': 'Eine gewaltige dunkle Kugel, von warmem Licht umringt, in einem tiefen Farbfeld.',
   'effect.prism.name': 'Prisma',
   'effect.prism.description': 'Licht, das beim Umbiegen am Horizont in Regenbogenbänder zerfällt.',
+  'effect.rain.name': 'Regen',
+  'effect.rain.description': 'Tropfen sammeln sich auf dem Glas, bis der Bildschirm nicht mehr lesenswert ist.',
   'effect.eclipse.name': 'Eklipse',
   'effect.eclipse.description': 'Eine ruhige dunkle Scheibe mit dünner Korona. Minimal und still.',
   'effect.voidfield.name': 'Leerfeld',

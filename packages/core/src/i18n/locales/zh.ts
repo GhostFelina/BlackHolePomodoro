@@ -152,6 +152,8 @@ export const zh: Messages = {
   'effect.halo.description': '巨大的暗球被暖光环绕，置身深邃斑斓的星野。',
   'effect.prism.name': '棱镜',
   'effect.prism.description': '光线掠过视界弯折时裂成彩虹光带。',
+  'effect.rain.name': '雨',
+  'effect.rain.description': '水珠在玻璃上聚积，直到屏幕不再值得阅读。',
   'effect.eclipse.name': '日食',
   'effect.eclipse.description': '一个安静的暗色圆盘，外缘一圈细日冕。极简而沉静。',
   'effect.voidfield.name': '虚空场',

@@ -155,6 +155,8 @@ export const ar: Messages = {
   'effect.halo.description': 'كرة مظلمة هائلة يطوّقها ضوء دافئ، في حقل عميق ملوّن.',
   'effect.prism.name': 'منشور',
   'effect.prism.description': 'ضوء ينشطر إلى أشرطة قوس قزح وهو ينحني قرب الأفق.',
+  'effect.rain.name': 'مطر',
+  'effect.rain.description': 'تتجمّع القطرات على الزجاج حتى لا تعود الشاشة تستحق القراءة.',
   'effect.eclipse.name': 'كسوف',
   'effect.eclipse.description': 'قرص مظلم هادئ بهالة رفيعة. بسيط وصامت.',
   'effect.voidfield.name': 'حقل الفراغ',

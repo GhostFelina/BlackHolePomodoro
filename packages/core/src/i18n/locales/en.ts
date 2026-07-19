@@ -156,6 +156,8 @@ export const en: Messages = {
   'effect.halo.description': 'A vast dark sphere ringed with warm light, set in a deep colourful field.',
   'effect.prism.name': 'Prism',
   'effect.prism.description': 'Light split into rainbow bands as it bends past the horizon.',
+  'effect.rain.name': 'Rain',
+  'effect.rain.description': 'Droplets gather on the glass until the screen is no longer worth reading.',
   'effect.eclipse.name': 'Eclipse',
   'effect.eclipse.description': 'A calm dark disc with a thin corona. Minimal and quiet.',
   'effect.voidfield.name': 'Void Field',

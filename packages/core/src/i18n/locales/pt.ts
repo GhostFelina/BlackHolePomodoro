@@ -156,6 +156,8 @@ export const pt: Messages = {
   'effect.halo.description': 'Uma vasta esfera escura cercada de luz quente, num campo profundo e colorido.',
   'effect.prism.name': 'Prisma',
   'effect.prism.description': 'Luz dividida em faixas de arco-íris ao se curvar junto ao horizonte.',
+  'effect.rain.name': 'Chuva',
+  'effect.rain.description': 'Gotas se acumulam no vidro até a tela não valer mais a leitura.',
   'effect.eclipse.name': 'Eclipse',
   'effect.eclipse.description': 'Um disco escuro e calmo com uma coroa fina. Mínimo e silencioso.',
   'effect.voidfield.name': 'Campo Vazio',

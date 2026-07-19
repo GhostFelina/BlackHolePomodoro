@@ -154,6 +154,8 @@ export const tr: Messages = {
   'effect.halo.description': 'Sıcak ışıkla çevrelenmiş devasa karanlık küre, derin ve renkli bir alanda.',
   'effect.prism.name': 'Prizma',
   'effect.prism.description': 'Ufkun yanından bükülürken gökkuşağı bantlarına ayrılan ışık.',
+  'effect.rain.name': 'Yağmur',
+  'effect.rain.description': 'Camda biriken damlalar ekranı okumaya değmez hâle getirir.',
   'effect.eclipse.name': 'Tutulma',
   'effect.eclipse.description': 'İnce bir taçla çevrili sakin, karanlık bir disk. Sade ve sessiz.',
   'effect.voidfield.name': 'Boşluk Alanı',

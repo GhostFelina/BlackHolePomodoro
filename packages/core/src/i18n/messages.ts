@@ -175,6 +175,8 @@ export interface Messages {
   'effect.halo.description': string;
   'effect.prism.name': string;
   'effect.prism.description': string;
+  'effect.rain.name': string;
+  'effect.rain.description': string;
   'effect.eclipse.name': string;
   'effect.eclipse.description': string;
   'effect.voidfield.name': string;

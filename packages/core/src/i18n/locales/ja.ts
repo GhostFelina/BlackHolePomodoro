@@ -155,6 +155,8 @@ export const ja: Messages = {
   'effect.halo.description': '暖かい光の環をまとう巨大な暗い球体。深く色鮮やかな星域の中に。',
   'effect.prism.name': 'プリズム',
   'effect.prism.description': '地平線をかすめて曲がるとき虹の帯に分かれる光。',
+  'effect.rain.name': '雨',
+  'effect.rain.description': 'ガラスに雫がたまり、やがて画面は読む価値をなくします。',
   'effect.eclipse.name': 'イクリプス',
   'effect.eclipse.description': '細いコロナをまとった静かな暗い円盤。最小限で物静か。',
   'effect.voidfield.name': 'ヴォイドフィールド',
