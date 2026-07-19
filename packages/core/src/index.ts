@@ -16,6 +16,7 @@ export {
   SETTINGS_VERSION,
   sanitizeSettings,
   settingsToDurations,
+  settingsToEffectParams,
   type BreakStrictness,
   type Settings,
   type ThemeAccent,

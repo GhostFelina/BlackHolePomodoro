@@ -101,6 +101,21 @@ export interface Messages {
   'settings.reducedMotion': string;
   'settings.reducedMotion.help': string;
 
+  // -- settings: black hole -------------------------------------------------
+  'settings.preview': string;
+  'settings.preview.help': string;
+  'settings.blackHole': string;
+  'settings.bloom': string;
+  'settings.bloom.help': string;
+  'settings.discBrightness': string;
+  'settings.discSpeed': string;
+  'settings.inclination': string;
+  'settings.doppler': string;
+  'settings.doppler.help': string;
+  'settings.starDensity': string;
+  'settings.nebula': string;
+  'settings.resetEffect': string;
+
   // -- settings: break ------------------------------------------------------
   'settings.strictness': string;
   'settings.strictness.help': string;

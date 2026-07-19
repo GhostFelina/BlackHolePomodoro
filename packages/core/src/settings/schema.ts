@@ -36,6 +36,25 @@ export interface Settings {
   /** Overall effect opacity, 0.2–1. Lets sensitive users tone it down. */
   intensity: number;
   accent: ThemeAccent;
+  /** Glow strength around bright material. 0 turns the post chain off. */
+  bloom: number;
+
+  // -- effect tunables ------------------------------------------------------
+  /** Accretion disc emission. */
+  discBrightness: number;
+  /** Disc rotation rate. */
+  discSpeed: number;
+  /** Viewing angle above the disc plane, in degrees. Low is film-like. */
+  inclination: number;
+  /**
+   * Relativistic Doppler beaming and gravitational shift, 0–1. Interstellar
+   * switched both off; 0 reproduces that, 1 is physically complete.
+   */
+  doppler: number;
+  /** Background star density. */
+  starDensity: number;
+  /** Galaxy and nebula brightness. */
+  nebula: number;
   /** Skip the growth animation and render a still effect (accessibility). */
   reducedMotion: boolean;
 
@@ -74,6 +93,14 @@ export const DEFAULT_SETTINGS: Settings = Object.freeze({
   maxFps: 0,
   intensity: 1,
   accent: 'ember',
+  bloom: 1,
+
+  discBrightness: 1,
+  discSpeed: 1,
+  inclination: 3.2,
+  doppler: 0.12,
+  starDensity: 1,
+  nebula: 1,
   reducedMotion: false,
 
   strictness: 'standard',
@@ -93,6 +120,13 @@ export const LIMITS = Object.freeze({
   warningMinutes: { min: 1, max: 60, step: 1 },
   skipArmSeconds: { min: 0, max: 60, step: 1 },
   intensity: { min: 0.2, max: 1, step: 0.05 },
+  bloom: { min: 0, max: 2, step: 0.05 },
+  discBrightness: { min: 0.2, max: 2.5, step: 0.05 },
+  discSpeed: { min: 0, max: 4, step: 0.1 },
+  inclination: { min: 0, max: 25, step: 0.2 },
+  doppler: { min: 0, max: 1, step: 0.02 },
+  starDensity: { min: 0, max: 2, step: 0.05 },
+  nebula: { min: 0, max: 2.5, step: 0.05 },
   maxFps: { min: 0, max: 240, step: 10 },
 });
 
@@ -121,6 +155,14 @@ export function sanitizeSettings(input: unknown, base: Settings = DEFAULT_SETTIN
     maxFps: num(raw.maxFps, base.maxFps, LIMITS.maxFps),
     intensity: num(raw.intensity, base.intensity, LIMITS.intensity, true),
     accent: oneOf(raw.accent, ACCENTS, base.accent),
+    bloom: num(raw.bloom, base.bloom, LIMITS.bloom, true),
+
+    discBrightness: num(raw.discBrightness, base.discBrightness, LIMITS.discBrightness, true),
+    discSpeed: num(raw.discSpeed, base.discSpeed, LIMITS.discSpeed, true),
+    inclination: num(raw.inclination, base.inclination, LIMITS.inclination, true),
+    doppler: num(raw.doppler, base.doppler, LIMITS.doppler, true),
+    starDensity: num(raw.starDensity, base.starDensity, LIMITS.starDensity, true),
+    nebula: num(raw.nebula, base.nebula, LIMITS.nebula, true),
     reducedMotion: bool(raw.reducedMotion, base.reducedMotion),
 
     strictness: oneOf(raw.strictness, STRICTNESS, base.strictness),
@@ -138,6 +180,18 @@ export function sanitizeSettings(input: unknown, base: Settings = DEFAULT_SETTIN
     settings.warningMinutes = settings.workMinutes;
   }
   return settings;
+}
+
+/** The subset the renderer needs, in the shape the shader uniforms expect. */
+export function settingsToEffectParams(settings: Settings) {
+  return {
+    discBrightness: settings.discBrightness,
+    discSpeed: settings.discSpeed,
+    inclination: settings.inclination,
+    doppler: settings.doppler,
+    starDensity: settings.starDensity,
+    nebula: settings.nebula,
+  };
 }
 
 export function settingsToDurations(settings: Settings) {

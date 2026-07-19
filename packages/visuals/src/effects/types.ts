@@ -28,7 +28,40 @@ export interface EffectFrameContext {
   accent: [number, number, number];
   /** True when the user asked for reduced motion. */
   reducedMotion: boolean;
+  /**
+   * Effect-specific tunables, surfaced in the settings panel.
+   *
+   * Kept as a flat record of numbers rather than a typed struct per effect so
+   * that adding a knob to one effect never touches the renderer, the IPC layer
+   * or the settings schema plumbing — only the effect and the panel that draws
+   * its controls.
+   */
+  params: EffectParams;
 }
+
+export interface EffectParams {
+  /** Overall emission of the accretion disc. */
+  discBrightness: number;
+  /** Rotation rate multiplier for the disc. */
+  discSpeed: number;
+  /** Viewing angle above the disc plane, in degrees. */
+  inclination: number;
+  /** 0 = symmetric as graded for the film, 1 = physically complete. */
+  doppler: number;
+  /** Density of the background star field. */
+  starDensity: number;
+  /** Brightness of the nebula and galactic band. */
+  nebula: number;
+}
+
+export const DEFAULT_EFFECT_PARAMS: EffectParams = Object.freeze({
+  discBrightness: 1.0,
+  discSpeed: 1.0,
+  inclination: 3.2,
+  doppler: 0.12,
+  starDensity: 1.0,
+  nebula: 1.0,
+});
 
 export interface FocusEffect {
   /** Stable id persisted in settings. Never rename an existing one. */
@@ -70,6 +103,14 @@ uniform float uHasScreen;
 uniform vec3  uAccent;
 uniform float uReducedMotion;
 uniform sampler2D uScreen;
+
+// User-tunable, all live-updated from the settings panel.
+uniform float uDiscBrightness;
+uniform float uDiscSpeed;
+uniform float uInclination;   // degrees
+uniform float uDoppler;
+uniform float uStarDensity;
+uniform float uNebula;
 
 in  vec2 vUv;
 out vec4 fragColor;

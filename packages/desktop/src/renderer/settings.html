@@ -102,6 +102,21 @@
         <section class="panel" data-panel="appearance" hidden>
           <h1 data-i18n="settings.section.appearance"></h1>
 
+          <!-- Live preview: the same renderer the overlay uses, so what is
+               shown here is exactly what will appear on screen. -->
+          <div class="field">
+            <label data-i18n="settings.preview"></label>
+            <p class="help" data-i18n="settings.preview.help"></p>
+            <div class="preview-frame">
+              <canvas id="previewCanvas"></canvas>
+              <input
+                type="range" id="previewSize" class="preview-size"
+                min="0.05" max="1" step="0.01" value="0.55"
+                aria-label="preview size"
+              />
+            </div>
+          </div>
+
           <div class="field">
             <label data-i18n="settings.effect"></label>
             <p class="help" data-i18n="settings.effect.help"></p>
@@ -130,6 +145,68 @@
               <output for="maxFps" id="maxFpsOut"></output>
             </div>
           </div>
+
+          <div class="field">
+            <label for="bloom" data-i18n="settings.bloom"></label>
+            <p class="help" data-i18n="settings.bloom.help"></p>
+            <div class="slider-row">
+              <input type="range" id="bloom" min="0" max="2" step="0.05" />
+              <output for="bloom" id="bloomOut"></output>
+            </div>
+          </div>
+
+          <h2 class="subhead" data-i18n="settings.blackHole"></h2>
+
+          <div class="field">
+            <label for="discBrightness" data-i18n="settings.discBrightness"></label>
+            <div class="slider-row">
+              <input type="range" id="discBrightness" min="0.2" max="2.5" step="0.05" />
+              <output for="discBrightness" id="discBrightnessOut"></output>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="discSpeed" data-i18n="settings.discSpeed"></label>
+            <div class="slider-row">
+              <input type="range" id="discSpeed" min="0" max="4" step="0.1" />
+              <output for="discSpeed" id="discSpeedOut"></output>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="inclination" data-i18n="settings.inclination"></label>
+            <div class="slider-row">
+              <input type="range" id="inclination" min="0" max="25" step="0.2" />
+              <output for="inclination" id="inclinationOut"></output>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="doppler" data-i18n="settings.doppler"></label>
+            <p class="help" data-i18n="settings.doppler.help"></p>
+            <div class="slider-row">
+              <input type="range" id="doppler" min="0" max="1" step="0.02" />
+              <output for="doppler" id="dopplerOut"></output>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="starDensity" data-i18n="settings.starDensity"></label>
+            <div class="slider-row">
+              <input type="range" id="starDensity" min="0" max="2" step="0.05" />
+              <output for="starDensity" id="starDensityOut"></output>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="nebula" data-i18n="settings.nebula"></label>
+            <div class="slider-row">
+              <input type="range" id="nebula" min="0" max="2.5" step="0.05" />
+              <output for="nebula" id="nebulaOut"></output>
+            </div>
+          </div>
+
+          <button id="resetEffect" class="ghost inline" data-i18n="settings.resetEffect"></button>
 
           <div class="toggles">
             <label class="switch">

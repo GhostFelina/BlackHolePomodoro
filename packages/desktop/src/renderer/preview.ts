@@ -19,7 +19,8 @@ import {
   getEffect,
   listEffects,
 } from '@blackholock/visuals';
-import type { EffectFrameContext } from '@blackholock/visuals';
+import { DEFAULT_EFFECT_PARAMS } from '@blackholock/visuals';
+import type { EffectFrameContext, EffectParams } from '@blackholock/visuals';
 import type { ThemeAccent } from '@blackholock/core';
 
 const canvas = document.getElementById('stage') as HTMLCanvasElement;
@@ -34,7 +35,14 @@ const state = {
   playing: true,
   autoGrow: false,
   intensity: 1,
+  params: { ...DEFAULT_EFFECT_PARAMS } as EffectParams,
 };
+
+// Any tunable can be overridden from the query string for quick comparisons.
+for (const key of Object.keys(DEFAULT_EFFECT_PARAMS) as Array<keyof EffectParams>) {
+  const raw = params.get(key);
+  if (raw !== null && Number.isFinite(Number(raw))) state.params[key] = Number(raw);
+}
 
 /** A stand-in desktop so lensing has something recognisable to bend. */
 function buildFakeDesktop(width: number, height: number): HTMLCanvasElement {
@@ -136,6 +144,7 @@ function frame(): EffectFrameContext | null {
     hasScreenTexture: state.lensing && getEffect(state.effectId).supportsScreenLensing,
     accent: accentToRgb(state.accent),
     reducedMotion: false,
+    params: state.params,
   };
 }
 

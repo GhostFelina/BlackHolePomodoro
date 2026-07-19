@@ -8,3 +8,4 @@ release/
 packages/*/dist/
 packages/*/out/
 packages/*/tsconfig.tsbuildinfo
+release/

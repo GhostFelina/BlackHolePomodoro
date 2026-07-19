@@ -8,7 +8,8 @@ import {
   type Settings,
   type ThemeAccent,
 } from '@blackholock/core';
-import { accentToCss, listEffects } from '@blackholock/visuals';
+import { EffectRenderer, accentToCss, accentToRgb, getEffect, listEffects } from '@blackholock/visuals';
+import { settingsToEffectParams } from '@blackholock/core';
 import type { AppInfo, BlackHolockApi } from '../preload/index.js';
 
 declare global {
@@ -304,6 +305,21 @@ const SLIDERS = [
   { id: 'skipArmSeconds', unit: 'settings.seconds' },
 ] as const;
 
+/**
+ * Sliders whose value is a bare multiplier or an angle rather than a duration.
+ * They share one binding path: update the readout live, redraw the preview
+ * immediately, and persist on release.
+ */
+const EFFECT_SLIDERS = [
+  { id: 'bloom', format: (v: number) => `${Math.round(v * 100)} %` },
+  { id: 'discBrightness', format: (v: number) => `${Math.round(v * 100)} %` },
+  { id: 'discSpeed', format: (v: number) => `${v.toFixed(1)}×` },
+  { id: 'inclination', format: (v: number) => `${v.toFixed(1)}°` },
+  { id: 'doppler', format: (v: number) => `${Math.round(v * 100)} %` },
+  { id: 'starDensity', format: (v: number) => `${Math.round(v * 100)} %` },
+  { id: 'nebula', format: (v: number) => `${Math.round(v * 100)} %` },
+] as const;
+
 const SWITCHES = [
   'autoContinue',
   'autoStartOnLaunch',
@@ -334,6 +350,28 @@ function setupControls(): void {
       void patch({ [name]: input.checked } as Partial<Settings>),
     );
   }
+
+  for (const slider of EFFECT_SLIDERS) {
+    const input = $id<HTMLInputElement>(slider.id);
+    input.addEventListener('input', () => {
+      const value = Number(input.value);
+      $id(`${slider.id}Out`).textContent = slider.format(value);
+      // Update the working copy so the preview reacts on the same frame,
+      // without waiting for the round trip to the main process.
+      if (settings) (settings as unknown as Record<string, number>)[slider.id] = value;
+      refreshPreview();
+    });
+    input.addEventListener('change', () =>
+      void patch({ [slider.id]: Number(input.value) } as Partial<Settings>),
+    );
+  }
+
+  $id('resetEffect').addEventListener('click', () => {
+    void patch({
+      bloom: 1, discBrightness: 1, discSpeed: 1,
+      inclination: 3.2, doppler: 0.12, starDensity: 1, nebula: 1,
+    });
+  });
 
   const intensity = $id<HTMLInputElement>('intensity');
   intensity.addEventListener('input', () => {
@@ -400,7 +438,90 @@ function syncControls(): void {
   $id<HTMLInputElement>('maxFps').value = String(settings.maxFps);
   writeFpsOutput(settings.maxFps);
 
+  for (const slider of EFFECT_SLIDERS) {
+    const value = settings[slider.id as keyof Settings] as number;
+    $id<HTMLInputElement>(slider.id).value = String(value);
+    $id(`${slider.id}Out`).textContent = slider.format(value);
+  }
+  refreshPreview();
+
   renderTimeline();
+}
+
+// ------------------------------------------------------------- live preview
+
+/**
+ * A miniature of the real thing.
+ *
+ * It instantiates the same `EffectRenderer` the overlay uses and feeds it the
+ * settings currently in the panel, so nothing here can drift from what will
+ * actually appear on screen. Every slider redraws it on `input`, before the
+ * value is even saved, which is what makes the controls feel direct.
+ *
+ * The renderer is left running only while the Appearance panel is visible.
+ */
+let preview: EffectRenderer | null = null;
+let previewSize = 0.55;
+
+function startPreview(): void {
+  const canvas = document.getElementById('previewCanvas') as HTMLCanvasElement | null;
+  if (!canvas || preview) return;
+
+  preview = new EffectRenderer(canvas, {
+    // A small canvas; capping lower than the overlay keeps the settings window
+    // light even on a machine already rendering the real effect.
+    maxRenderEdge: 1400,
+    bloom: settings?.bloom ?? 1,
+  });
+  if (!preview.isAvailable) return;
+
+  const sizeInput = document.getElementById('previewSize') as HTMLInputElement | null;
+  sizeInput?.addEventListener('input', () => {
+    previewSize = Number(sizeInput.value);
+  });
+
+  preview.setEffect(getEffect(settings?.effectId ?? 'gargantua'));
+
+  if (info?.isDev) {
+    // Proves the panel's preview is genuinely rendering, and at what cost.
+    window.setInterval(() => {
+      const s = preview?.getStats();
+      if (s) console.info(`preview fps=${s.fps} frame=${s.frameMs}ms ${s.renderWidth}x${s.renderHeight}`);
+    }, 2500);
+  }
+
+  preview.start(() => {
+    if (!preview || !settings) return null;
+    const dpr = window.devicePixelRatio || 1;
+    const rect = (canvas.parentElement as HTMLElement).getBoundingClientRect();
+    const [w, h] = preview.resize(rect.width, rect.height, dpr);
+
+    const minEdge = Math.min(w, h);
+    const diagonal = Math.hypot(w, h);
+    const eased = 0.15 * previewSize + 0.85 * previewSize ** 3;
+    const radius = Math.max(4, minEdge * 0.005) + (diagonal * 0.55 - 4) * eased;
+
+    return {
+      time: performance.now() / 1000,
+      resolution: [w, h],
+      center: [w / 2, h / 2],
+      radius,
+      growth: previewSize,
+      intensity: settings.intensity,
+      blackout: 0,
+      hasScreenTexture: false,
+      accent: accentToRgb(settings.accent),
+      reducedMotion: settings.reducedMotion,
+      params: settingsToEffectParams(settings),
+    };
+  });
+}
+
+/** Pushes changes that the renderer holds outside the per-frame context. */
+function refreshPreview(): void {
+  if (!preview || !settings) return;
+  preview.setEffect(getEffect(settings.effectId));
+  preview.setBloom(settings.bloom);
 }
 
 // ------------------------------------------------------------------ plumbing
@@ -442,6 +563,7 @@ async function boot(): Promise<void> {
 
   setupNav();
   setupControls();
+  startPreview();
   setupAbout();
   applyTranslations();
 

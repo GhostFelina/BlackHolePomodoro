@@ -1,5 +1,5 @@
 import type { EngineSnapshot, Phase } from '@blackholock/core';
-import type { EffectFrameContext } from './effects/types.js';
+import { DEFAULT_EFFECT_PARAMS, type EffectFrameContext, type EffectParams } from './effects/types.js';
 
 /**
  * Turns the engine's phase and progress into the effect's position, size and
@@ -35,6 +35,8 @@ export interface ChoreographyInput {
   accent: [number, number, number];
   reducedMotion: boolean;
   hasScreenTexture: boolean;
+  /** Effect tunables from settings; defaults are used when omitted. */
+  params?: EffectParams;
 }
 
 export const SWALLOW_SECONDS = 2.2;
@@ -121,6 +123,7 @@ export class Choreographer {
       hasScreenTexture: input.hasScreenTexture,
       accent: input.accent,
       reducedMotion: input.reducedMotion,
+      params: input.params ?? DEFAULT_EFFECT_PARAMS,
     };
 
     switch (this.stage) {

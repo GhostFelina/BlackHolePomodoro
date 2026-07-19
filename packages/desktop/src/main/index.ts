@@ -41,6 +41,8 @@ const devServerUrl = process.env.ELECTRON_RENDERER_URL;
 const fastArg = process.argv.find((arg) => arg.startsWith('--fast'));
 const TIME_SCALE = fastArg ? Number(fastArg.split('=')[1] ?? 60) || 60 : 1;
 const AUTOSTART = process.argv.includes('--autostart');
+/** Opens the settings window straight away — used when reviewing the panel. */
+const OPEN_SETTINGS = process.argv.includes('--settings');
 const rendererDir = join(__dirname, '../renderer');
 const preloadPath = join(__dirname, '../preload/index.cjs');
 
@@ -97,6 +99,7 @@ class BlackHolock {
       this.applyLoginItem(settings.launchAtLogin);
     }
     if (settings.autoStartOnLaunch || AUTOSTART) this.startFocus();
+    if (OPEN_SETTINGS) this.openSettings('appearance');
     if (TIME_SCALE !== 1) console.log(`[BlackHolock] Fast mode: ${TIME_SCALE}× time scale`);
     if (settings.checkForUpdates) void this.checkForUpdates(false);
 
@@ -312,6 +315,12 @@ class BlackHolock {
         nodeIntegration: false,
         sandbox: false,
       },
+    });
+
+    // Same console bridge as the overlay: a failure inside the settings
+    // renderer would otherwise be invisible.
+    win.webContents.on('console-message', (_event, level, message) => {
+      if (level >= 1 || isDev) console.log(`[settings] ${message}`);
     });
 
     win.once('ready-to-show', () => {

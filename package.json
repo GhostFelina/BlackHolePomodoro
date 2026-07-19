@@ -18,7 +18,8 @@
     "dist": "npm run build && npm run dist --workspace @blackholock/desktop",
     "brand:icons": "node scripts/generate-icons.mjs",
     "i18n:check": "node scripts/check-locales.mjs",
-    "preview": "npm run preview --workspace @blackholock/desktop"
+    "preview": "npm run preview --workspace @blackholock/desktop",
+    "icon:desktop": "node scripts/install-desktop-icon.mjs"
   },
   "devDependencies": {
     "typescript": "^5.7.2",

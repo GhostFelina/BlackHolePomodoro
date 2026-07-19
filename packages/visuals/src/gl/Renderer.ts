@@ -43,6 +43,12 @@ const UNIFORM_NAMES = [
   'uAccent',
   'uReducedMotion',
   'uScreen',
+  'uDiscBrightness',
+  'uDiscSpeed',
+  'uInclination',
+  'uDoppler',
+  'uStarDensity',
+  'uNebula',
 ] as const;
 
 type UniformName = (typeof UNIFORM_NAMES)[number];
@@ -377,6 +383,14 @@ export class EffectRenderer {
     if (u.uAccent) gl.uniform3fv(u.uAccent, context.accent);
     if (u.uReducedMotion) gl.uniform1f(u.uReducedMotion, context.reducedMotion ? 1 : 0);
     if (u.uScreen) gl.uniform1i(u.uScreen, 0);
+
+    const p = context.params;
+    if (u.uDiscBrightness) gl.uniform1f(u.uDiscBrightness, p.discBrightness);
+    if (u.uDiscSpeed) gl.uniform1f(u.uDiscSpeed, p.discSpeed);
+    if (u.uInclination) gl.uniform1f(u.uInclination, p.inclination);
+    if (u.uDoppler) gl.uniform1f(u.uDoppler, p.doppler);
+    if (u.uStarDensity) gl.uniform1f(u.uStarDensity, p.starDensity);
+    if (u.uNebula) gl.uniform1f(u.uNebula, p.nebula);
 
     gl.drawArrays(gl.TRIANGLES, 0, 3);
 

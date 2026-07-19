@@ -32,10 +32,10 @@ import type { FocusEffect } from './types.js';
  * result is the image everyone recognises — a disc with the right *shape* but
  * not the right lopsidedness.
  *
- * `DOPPLER_MIX` is that decision, exposed as a number. At 0 the disc is
- * symmetric and film-accurate. At 1 it is physically complete and visibly
- * lopsided. It ships at 0.12: enough asymmetry to read as a rotating object,
- * far short of drowning one side.
+ * That decision is a setting rather than a constant. At 0 the disc is
+ * symmetric and film-accurate; at 1 it is physically complete and visibly
+ * lopsided. It defaults to 0.12 — enough asymmetry to read as a rotating
+ * object, far short of drowning one side — and the panel exposes the slider.
  *
  * ## The disc has volume
  *
@@ -57,12 +57,6 @@ import type { FocusEffect } from './types.js';
 
 const STEPS = 220;
 
-/**
- * 0 = symmetric, as graded for the film.
- * 1 = physically complete, and lopsided enough to be confusing.
- */
-const DOPPLER_MIX = 0.12;
-
 export const gargantua: FocusEffect = {
   id: 'gargantua',
   nameKey: 'effect.gargantua.name',
@@ -77,8 +71,6 @@ const float DISC_OUT   = 13.0;   // outer edge — Gargantua's disc is wide and 
 const float DISC_THICK = 0.20;   // vertical half-thickness of the slab
 const float B_CRIT     = 2.598;  // 3*sqrt(3)/2 — angular radius of the shadow
 const float CAM_DIST   = 16.0;
-const float INCLINE    = 0.055;  // radians above the disc plane — nearly edge-on
-const float DOPPLER    = ${DOPPLER_MIX.toFixed(3)};
 
 // Domain-warped fractal noise. The warp is what turns smooth blobs into the
 // stretched filaments real accretion discs show.
@@ -98,6 +90,106 @@ vec3 discColour(float t) {
   return t < 0.55 ? mix(rim, mid, t / 0.55) : mix(mid, core, (t - 0.55) / 0.45);
 }
 
+
+// ---------------------------------------------------------------- deep sky
+//
+// A galaxy rendered rather than photographed. A bitmap would need to be 16k
+// across before it stopped going soft under the lens — the black hole magnifies
+// the background enormously near the photon ring — and would still add tens of
+// megabytes to the download. Evaluated instead, it stays sharp at any
+// magnification and costs nothing to ship.
+//
+// Four layers, in the order a real image builds up:
+//
+//   1. the galactic band     dust-laned, brightest toward the core
+//   2. emission nebulae      hydrogen-alpha reds and oxygen teals
+//   3. dark nebulae          cold dust that *subtracts*, which is what gives
+//                            a real Milky Way its structure
+//   4. stars                 four density layers with a realistic magnitude
+//                            distribution and colours drawn from stellar
+//                            temperature classes
+vec3 deepSky(vec2 sky, float time) {
+  // Tilt the galactic plane so it does not sit parallel to the disc.
+  float ga = sky.x * 0.85 + 0.4;
+  float gb = sky.y + sin(sky.x * 0.6) * 0.22;
+  vec2  gal = vec2(ga, gb);
+
+  // --- 1. galactic band ----------------------------------------------------
+  float bandDist = abs(gb);
+  float band = exp(-bandDist * bandDist * 5.5);
+  float core = exp(-(ga * ga) * 0.30) * exp(-bandDist * bandDist * 11.0);
+
+  float dust = fbm(gal * vec2(2.2, 7.0) + vec2(time * 0.002, 0.0));
+  float lanes = smoothstep(0.42, 0.78, dust);
+
+  vec3 bandWarm = vec3(0.130, 0.112, 0.090);
+  vec3 bandCore = vec3(0.245, 0.200, 0.145);
+  vec3 galaxy = mix(bandWarm, bandCore, core) * band;
+  galaxy *= 1.0 - lanes * 0.78;              // dust lanes cut the band
+  galaxy += bandCore * core * 0.55;
+
+  // --- 2. emission nebulae -------------------------------------------------
+  vec2  nUv    = gal * 1.15 + vec2(time * 0.0016, -time * 0.0009);
+  float clouds = warpedFbm(nUv);
+  float wisp   = warpedFbm(nUv * 2.6 + 11.0);
+
+  // Hydrogen alpha dominates real emission nebulae; doubly-ionised oxygen
+  // gives the teal. Mixing on a second noise field keeps them from tracking
+  // each other and looking like one tinted cloud.
+  vec3 hAlpha = vec3(0.205, 0.050, 0.072);
+  vec3 oIII   = vec3(0.042, 0.115, 0.135);
+  vec3 nebula = mix(hAlpha, oIII, smoothstep(0.35, 0.72, wisp));
+  // A high threshold keeps the nebulae as distinct structures. Lower and they
+  // merge into a uniform haze that reads as fog rather than sky.
+  nebula *= smoothstep(0.58, 0.96, clouds) * (0.45 + 0.90 * band);
+
+  // A cooler reflection component where the gas is thickest.
+  nebula += vec3(0.048, 0.070, 0.135) * smoothstep(0.74, 0.99, clouds) * 0.85;
+
+  // --- 3. dark nebulae -----------------------------------------------------
+  // Cold dust in front of everything. Subtracting rather than adding is what
+  // makes a sky look photographed instead of painted.
+  float darkDust = smoothstep(0.55, 0.86, warpedFbm(gal * 1.9 + 31.0));
+  vec3 sky3 = (galaxy + nebula) * (1.0 - darkDust * 0.84);
+
+  sky3 *= uNebula;
+
+  // --- 4. stars ------------------------------------------------------------
+  vec3 stars = vec3(0.0);
+  for (int layer = 0; layer < 4; layer++) {
+    float scale = 46.0 + float(layer) * 52.0;
+    vec2  cell  = floor(sky * scale);
+    float rnd   = hash21(cell + float(layer) * 37.13);
+
+    // More stars inside the galactic band, as in reality.
+    float cutoff = mix(0.9805, 0.9600, band) - (uStarDensity - 1.0) * 0.012;
+    if (rnd <= cutoff) continue;
+
+    float mag    = (rnd - cutoff) / max(1.0 - cutoff, 1e-4);
+    float bright = mag * mag * mag;                 // few bright, many faint
+
+    vec2  local = fract(sky * scale) - 0.5;
+    float twk   = 0.80 + 0.20 * sin(time * 1.05 + rnd * 91.0);
+    float point = exp(-dot(local, local) * mix(460.0, 130.0, bright));
+
+    // Diffraction spikes on the brightest stars only.
+    float spike = bright * bright
+                * exp(-abs(local.x) * 52.0) * exp(-abs(local.y) * 3.5)
+                + bright * bright
+                * exp(-abs(local.y) * 52.0) * exp(-abs(local.x) * 3.5);
+
+    // Colour by stellar class: blue-white O/B through to deep orange M.
+    float temp = hash11(rnd * 53.7);
+    vec3  tint = temp < 0.5
+      ? mix(vec3(0.62, 0.72, 1.00), vec3(1.00, 0.99, 0.97), temp * 2.0)
+      : mix(vec3(1.00, 0.99, 0.97), vec3(1.00, 0.74, 0.48), (temp - 0.5) * 2.0);
+
+    stars += tint * (point + spike * 0.22) * twk * (0.30 + 1.70 * bright);
+  }
+
+  return sky3 + stars * uStarDensity;
+}
+
 void main() {
   vec2  pixel = vUv * uResolution;
   vec2  d     = pixel - uCenter;
@@ -113,7 +205,8 @@ void main() {
   // follows from the critical impact parameter.
   float pixPerRad = rs / (B_CRIT / CAM_DIST);
 
-  float ci = cos(INCLINE), si = sin(INCLINE);
+  float incline = radians(uInclination);
+  float ci = cos(incline), si = sin(incline);
   vec3 camPos = vec3(0.0, CAM_DIST * si, -CAM_DIST * ci);
   vec3 fwd    = normalize(-camPos);
   vec3 right  = normalize(cross(vec3(0.0, 1.0, 0.0), fwd));
@@ -127,7 +220,7 @@ void main() {
   float h2   = dot(hvec, hvec);
 
   // Slow on purpose. This is a hundred million solar masses.
-  float spin = uReducedMotion > 0.5 ? 0.0 : uTime * 0.09;
+  float spin = uReducedMotion > 0.5 ? 0.0 : uTime * 0.09 * uDiscSpeed;
 
   // ------------------------------------------------------------- integrate
   vec3  disc     = vec3(0.0);
@@ -181,7 +274,7 @@ void main() {
 
       // Doppler beaming and gravitational shift, scaled by DOPPLER. At the
       // shipped value this is a hint of asymmetry, not a blackout.
-      if (DOPPLER > 0.001) {
+      if (uDoppler > 0.001) {
         vec3  tangent = normalize(cross(vec3(0.0, 1.0, 0.0), pos));
         float vOrb    = min(sqrt(0.5 / max(rd, 0.5)), 0.70);
         float beta    = vOrb * dot(tangent, -normalize(vel));
@@ -189,10 +282,10 @@ void main() {
         float delta   = 1.0 / max(gam * (1.0 - beta), 0.05);
         float grav    = sqrt(max(1.0 - 1.0 / rd, 0.02));
         float full    = clamp(pow(delta, 3.0) * grav, 0.05, 6.0);
-        emission *= mix(1.0, full, DOPPLER);
+        emission *= mix(1.0, full, uDoppler);
       }
 
-      disc += emission * dt * 0.92;
+      disc += emission * dt * 0.92 * uDiscBrightness;
     }
 
     vec3 acc = -1.5 * h2 * pos / (r2 * r2 * r);
@@ -224,38 +317,11 @@ void main() {
       background = sampleScreen(samplePx);
     }
 
-    // Stars, sampled in the deflected direction so one star can appear twice:
-    // once directly, once smeared into an Einstein arc.
+    // ------------------------------------------------------------- the sky
+    // Sampled in the *deflected* direction, so a single star can appear twice:
+    // once directly and once smeared into an Einstein arc around the hole.
     vec2 sky = vec2(atan(outDir.z, outDir.x), asin(clamp(outDir.y, -1.0, 1.0)));
-
-    // Three layers with a steep brightness distribution: many faint stars,
-    // few bright ones. A flat cutoff gives every star the same magnitude and
-    // reads immediately as a texture rather than a sky.
-    for (int layer = 0; layer < 3; layer++) {
-      float scale = 54.0 + float(layer) * 46.0;
-      vec2  cell  = floor(sky * scale);
-      float rnd   = hash21(cell + float(layer) * 31.7);
-      if (rnd > 0.968) {
-        // Remap the tail of the hash into a magnitude, then cube it so the
-        // bright end is rare.
-        float mag   = (rnd - 0.968) / 0.032;
-        float bright = mag * mag * mag;
-
-        vec2  local = fract(sky * scale) - 0.5;
-        float tw    = 0.78 + 0.22 * sin(uTime * 1.1 + rnd * 83.0);
-        float core  = exp(-dot(local, local) * mix(420.0, 150.0, bright));
-        // A faint cross-shaped flare on the brightest stars only.
-        float flare = bright * exp(-abs(local.x) * 46.0) * exp(-abs(local.y) * 46.0);
-
-        vec3 tint = mix(vec3(0.72, 0.81, 1.0), vec3(1.0, 0.88, 0.70),
-                        hash11(rnd * 27.1));
-        background += tint * (core + flare * 0.35) * tw * (0.35 + 1.5 * bright);
-      }
-    }
-
-    float clouds = warpedFbm(sky * 1.35);
-    vec3  nebula = mix(vec3(0.013, 0.018, 0.044), vec3(0.070, 0.034, 0.094), clouds);
-    background += nebula * smoothstep(0.40, 0.95, clouds) * 0.75;
+    background += deepSky(sky, uTime);
   }
 
   // --------------------------------------------------------- photon ring
