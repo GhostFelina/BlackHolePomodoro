@@ -182,4 +182,14 @@ export const es: Messages = {
     'Se denegó el permiso de grabación de pantalla. El efecto funciona sin curvar el escritorio.',
   'error.settingsCorrupt':
     'No se pudo leer el archivo de ajustes y se han restablecido los valores por defecto.',
+  'settings.section.analytics': 'Analíticas',
+  'analytics.last14days': 'Últimos 14 días',
+  'analytics.focus': 'Enfoque',
+  'analytics.break': 'Descanso',
+  'analytics.effectUsage': 'Uso de efectos',
+  'analytics.noData': 'Aún no hay datos — inicia una sesión de enfoque.',
+  'analytics.today': 'Hoy',
+  'analytics.allTime': 'Histórico',
+  'analytics.h': 'h',
+  'analytics.m': 'min',
 };

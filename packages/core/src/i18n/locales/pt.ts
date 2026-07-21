@@ -182,4 +182,14 @@ export const pt: Messages = {
     'A permissão de gravação de tela foi negada. O efeito funciona sem curvar a área de trabalho.',
   'error.settingsCorrupt':
     'O arquivo de configurações estava ilegível e foi restaurado aos padrões.',
+  'settings.section.analytics': 'Análises',
+  'analytics.last14days': 'Últimos 14 dias',
+  'analytics.focus': 'Foco',
+  'analytics.break': 'Pausa',
+  'analytics.effectUsage': 'Uso de efeitos',
+  'analytics.noData': 'Ainda sem dados — inicie um foco.',
+  'analytics.today': 'Hoje',
+  'analytics.allTime': 'Total',
+  'analytics.h': 'h',
+  'analytics.m': 'min',
 };

@@ -180,4 +180,14 @@ export const ko: Messages = {
   'error.captureDenied':
     '화면 기록 권한이 거부되었습니다. 바탕화면을 휘게 하지 않고 효과가 실행됩니다.',
   'error.settingsCorrupt': '설정 파일을 읽을 수 없어 기본값으로 되돌렸습니다.',
+  'settings.section.analytics': '분석',
+  'analytics.last14days': '최근 14일',
+  'analytics.focus': '집중',
+  'analytics.break': '휴식',
+  'analytics.effectUsage': '효과 사용',
+  'analytics.noData': '데이터가 없습니다 — 집중을 시작하세요.',
+  'analytics.today': '오늘',
+  'analytics.allTime': '전체',
+  'analytics.h': '시간',
+  'analytics.m': '분',
 };

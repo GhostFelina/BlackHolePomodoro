@@ -13,7 +13,7 @@ import {
 } from '@blackholock/core';
 import { EffectRenderer, accentToCss, accentToRgb, getEffect, listEffects } from '@blackholock/visuals';
 import { settingsToEffectParams } from '@blackholock/core';
-import type { AppInfo, BlackHolockApi } from '../preload/index.js';
+import type { AppInfo, BlackHolockApi, StatsData } from '../preload/index.js';
 
 declare global {
   interface Window {
@@ -70,6 +70,9 @@ function applyTranslations(): void {
   renderAbout();
   renderFocusControl();
   syncControls();
+
+  // Re-render the analytics panel in the new language if it is on screen.
+  if (!$id('analyticsBody').closest<HTMLElement>('.panel')?.hidden) void renderAnalytics();
 }
 
 // ---------------------------------------------------------------- navigation
@@ -85,6 +88,7 @@ function setupNav(): void {
     }
     if (section === 'appearance') startPreview();
     else stopPreview();
+    if (section === 'analytics') void renderAnalytics();
   };
 
   for (const button of buttons) {
@@ -311,6 +315,187 @@ function setupAbout(): void {
           ? i18n.t('about.upToDate')
           : '—';
   });
+}
+
+// ------------------------------------------------------------------ analytics
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const CHART_FOCUS = '#ff9e42'; // brand orange
+const CHART_BREAK = '#3fb7c4'; // teal — a clearly separate hue from the orange
+
+/** Seconds → "2h 15m" / "15m", localised. */
+function fmtDur(seconds: number): string {
+  const mins = Math.round(seconds / 60);
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  const hu = i18n.t('analytics.h');
+  const mu = i18n.t('analytics.m');
+  return h > 0 ? `${h}${hu} ${m}${mu}` : `${m}${mu}`;
+}
+
+/** The last 14 local dates as YYYY-MM-DD, oldest first. */
+function last14Keys(): string[] {
+  const out: string[] = [];
+  const now = new Date();
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    out.push(`${d.getFullYear()}-${m}-${day}`);
+  }
+  return out;
+}
+
+function el<K extends keyof HTMLElementTagNameMap>(
+  tag: K,
+  className: string,
+  text?: string,
+): HTMLElementTagNameMap[K] {
+  const node = document.createElement(tag);
+  node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+
+function statTile(label: string, value: string): HTMLElement {
+  const tile = el('div', 'stat-tile');
+  tile.append(el('span', 'stat-value', value), el('span', 'stat-label', label));
+  return tile;
+}
+
+function svgRect(x: number, y: number, w: number, h: number, fill: string, round = 3): SVGElement {
+  const r = document.createElementNS(SVG_NS, 'rect');
+  r.setAttribute('x', String(x));
+  r.setAttribute('y', String(y));
+  r.setAttribute('width', String(Math.max(0, w)));
+  r.setAttribute('height', String(Math.max(0, h)));
+  r.setAttribute('rx', String(Math.min(round, w / 2)));
+  r.setAttribute('fill', fill);
+  return r;
+}
+
+/** 14 stacked bars: focus (bottom) + break (top), 2px gap between segments. */
+function build14DayChart(days: string[], stats: StatsData): SVGElement {
+  const W = 560;
+  const H = 150;
+  const pad = 6;
+  const n = days.length;
+  const slot = (W - pad * 2) / n;
+  const barW = slot * 0.62;
+  const max = Math.max(
+    60,
+    ...days.map((k) => (stats.days[k]?.focus ?? 0) + (stats.days[k]?.break ?? 0)),
+  );
+
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('class', 'chart-svg');
+  svg.setAttribute('role', 'img');
+
+  days.forEach((k, i) => {
+    const rec = stats.days[k] ?? { focus: 0, break: 0 };
+    const cx = pad + slot * i + (slot - barW) / 2;
+    const fH = ((rec.focus ?? 0) / max) * (H - 24);
+    const bH = ((rec.break ?? 0) / max) * (H - 24);
+    let y = H - 16;
+    if (fH > 0.5) {
+      svg.append(svgRect(cx, y - fH, barW, fH, CHART_FOCUS));
+      y -= fH + 2; // 2px surface gap between segments
+    }
+    if (bH > 0.5) svg.append(svgRect(cx, y - bH, barW, bH, CHART_BREAK));
+
+    // Day-of-month tick label, dimmed.
+    const label = document.createElementNS(SVG_NS, 'text');
+    label.setAttribute('x', String(cx + barW / 2));
+    label.setAttribute('y', String(H - 3));
+    label.setAttribute('class', 'chart-tick');
+    label.textContent = k.slice(8); // DD
+    svg.append(label);
+
+    // Native tooltip with the exact split.
+    const total = (rec.focus ?? 0) + (rec.break ?? 0);
+    if (total > 0) {
+      const hit = document.createElementNS(SVG_NS, 'title');
+      hit.textContent = `${k} · ${i18n.t('analytics.focus')} ${fmtDur(rec.focus ?? 0)} · ${i18n.t('analytics.break')} ${fmtDur(rec.break ?? 0)}`;
+      const wrap = svgRect(cx, 0, barW, H, 'transparent', 0);
+      wrap.append(hit);
+      svg.append(wrap);
+    }
+  });
+  return svg;
+}
+
+function legend(): HTMLElement {
+  const box = el('div', 'chart-legend');
+  for (const [color, key] of [
+    [CHART_FOCUS, 'analytics.focus'],
+    [CHART_BREAK, 'analytics.break'],
+  ] as const) {
+    const item = el('span', 'legend-item');
+    const dot = el('span', 'legend-dot');
+    dot.style.background = color;
+    item.append(dot, document.createTextNode(i18n.t(key)));
+    box.append(item);
+  }
+  return box;
+}
+
+function buildEffectBars(entries: Array<[string, number]>): HTMLElement {
+  const box = el('div', 'effect-usage');
+  const max = Math.max(...entries.map(([, s]) => s));
+  for (const [id, seconds] of entries) {
+    const row = el('div', 'effect-row');
+    let name = id;
+    try {
+      name = i18n.t(getEffect(id).nameKey as MessageKey);
+    } catch {
+      /* unknown effect id — show the raw id */
+    }
+    row.append(el('span', 'effect-name', name));
+    const track = el('div', 'effect-track');
+    const fill = el('div', 'effect-fill');
+    fill.style.width = `${Math.max(3, (seconds / max) * 100)}%`;
+    track.append(fill);
+    row.append(track, el('span', 'effect-time', fmtDur(seconds)));
+    box.append(row);
+  }
+  return box;
+}
+
+let analyticsToken = 0;
+async function renderAnalytics(): Promise<void> {
+  const host = $id('analyticsBody');
+  const token = ++analyticsToken;
+  const stats = await api.stats.get();
+  if (token !== analyticsToken) return; // a newer render superseded this one
+  host.replaceChildren();
+
+  const days = last14Keys();
+  const todayFocus = stats.days[days[days.length - 1]!]?.focus ?? 0;
+  const totalFocus = Object.values(stats.days).reduce((s, d) => s + (d.focus ?? 0), 0);
+  const anyBreak = Object.values(stats.days).some((d) => (d.break ?? 0) > 0);
+
+  if (totalFocus <= 0 && !anyBreak) {
+    host.append(el('p', 'empty', i18n.t('analytics.noData')));
+    return;
+  }
+
+  const tiles = el('div', 'stat-tiles');
+  tiles.append(statTile(i18n.t('analytics.today'), fmtDur(todayFocus)));
+  tiles.append(statTile(i18n.t('analytics.allTime'), fmtDur(totalFocus)));
+  host.append(tiles);
+
+  host.append(el('h2', 'subhead', i18n.t('analytics.last14days')));
+  host.append(build14DayChart(days, stats));
+  host.append(legend());
+
+  const effects = Object.entries(stats.effects)
+    .filter(([, s]) => s > 0)
+    .sort((a, b) => b[1] - a[1]);
+  if (effects.length) {
+    host.append(el('h2', 'subhead', i18n.t('analytics.effectUsage')));
+    host.append(buildEffectBars(effects));
+  }
 }
 
 // -------------------------------------------------------------- focus control

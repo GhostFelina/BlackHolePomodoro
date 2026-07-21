@@ -61,6 +61,18 @@ export interface Messages {
   'settings.section.language': string;
   'settings.section.system': string;
   'settings.section.about': string;
+  'settings.section.analytics': string;
+
+  // -- analytics ------------------------------------------------------------
+  'analytics.last14days': string;
+  'analytics.focus': string;
+  'analytics.break': string;
+  'analytics.effectUsage': string;
+  'analytics.noData': string;
+  'analytics.today': string;
+  'analytics.allTime': string;
+  'analytics.h': string;
+  'analytics.m': string;
   'settings.save': string;
   'settings.saved': string;
   'settings.unsavedChanges': string;

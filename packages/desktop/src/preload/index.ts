@@ -29,6 +29,14 @@ export interface UpdateResult {
   url?: string;
 }
 
+/** Local usage history for the Analytics panel. */
+export interface StatsData {
+  /** ISO date (YYYY-MM-DD) → seconds focused / on break that day. */
+  days: Record<string, { focus: number; break: number }>;
+  /** effectId → seconds it was the visible effect. */
+  effects: Record<string, number>;
+}
+
 /** What the main process tells the overlay about the break screen. */
 export interface BreakSignal {
   /** off = no break UI, pending = Mola Ver gate, active = running countdown. */
@@ -81,6 +89,10 @@ const api = {
     ready: (): void => {
       ipcRenderer.send('overlay:ready');
     },
+  },
+
+  stats: {
+    get: (): Promise<StatsData> => ipcRenderer.invoke('stats:get'),
   },
 
   app: {

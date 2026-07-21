@@ -180,4 +180,14 @@ export const ar: Messages = {
   'error.captureDenied':
     'رُفض إذن تسجيل الشاشة. يعمل التأثير دون ثني سطح المكتب.',
   'error.settingsCorrupt': 'تعذّرت قراءة ملف الإعدادات وأُعيد ضبطه إلى القيم الافتراضية.',
+  'settings.section.analytics': 'التحليلات',
+  'analytics.last14days': 'آخر 14 يومًا',
+  'analytics.focus': 'تركيز',
+  'analytics.break': 'استراحة',
+  'analytics.effectUsage': 'استخدام التأثيرات',
+  'analytics.noData': 'لا توجد بيانات بعد — ابدأ جلسة تركيز.',
+  'analytics.today': 'اليوم',
+  'analytics.allTime': 'كل الوقت',
+  'analytics.h': 'س',
+  'analytics.m': 'د',
 };

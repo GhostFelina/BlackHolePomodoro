@@ -297,6 +297,36 @@ vec3 breakScene(vec2 uv, vec2 res, float time) {
   return field;
 }
 
+// Shooting stars: three lanes, each firing on its own slow cycle. A streak is
+// a distance to a line segment — a few instructions, not a particle buffer.
+// Screen-space on purpose: meteors are foreground, closer than the lensed sky.
+vec3 meteorField(vec2 uv, vec2 res, float time) {
+  vec2 p = (uv - 0.5) * vec2(res.x / res.y, 1.0);
+  vec3 glow = vec3(0.0);
+  for (int i = 0; i < 3; i++) {
+    float fi    = float(i);
+    float cycle = 9.0 + fi * 4.5;
+    float phase = fract((time + fi * 3.1) / cycle);
+    float seed  = floor((time + fi * 3.1) / cycle) + fi * 17.0;
+
+    vec2  from = vec2(hash11(seed) * 2.2 - 1.1, hash11(seed + 5.0) * 1.4 - 0.7);
+    vec2  dir  = normalize(vec2(-0.85, -0.30 - hash11(seed + 9.0) * 0.5));
+    float trav = phase * 2.4;
+
+    vec2  head = from + dir * trav;
+    vec2  tail = head - dir * 0.20;
+
+    vec2  seg = head - tail;
+    float t   = clamp(dot(p - tail, seg) / max(dot(seg, seg), 1e-5), 0.0, 1.0);
+    float dd  = length(p - (tail + seg * t));
+
+    float streak = exp(-dd * 320.0) * t;
+    float alive  = smoothstep(0.0, 0.10, phase) * (1.0 - smoothstep(0.72, 1.0, phase));
+    glow += vec3(0.85, 0.92, 1.00) * streak * alive * 0.85;
+  }
+  return glow;
+}
+
 void main() {
   vec2  pixel = vUv * uResolution;
   vec2  d     = pixel - uCenter;
@@ -541,6 +571,10 @@ void main() {
 
   disc     *= lensStrength;
   captured *= lensStrength;
+
+  // Shooting stars streak the sky once the break has taken over. Added to the
+  // background so the event horizon still swallows them.
+  background += meteorField(vUv, uResolution, uTime) * smoothstep(0.55, 0.95, uGrowth);
 
   // --------------------------------------------------------------- compose
   // Emission from material in front of the hole stays visible even when the

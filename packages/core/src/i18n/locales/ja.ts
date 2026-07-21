@@ -180,4 +180,14 @@ export const ja: Messages = {
   'error.captureDenied':
     '画面収録の許可が拒否されました。デスクトップを曲げずにエフェクトを表示します。',
   'error.settingsCorrupt': '設定ファイルを読み取れなかったため、初期値に戻しました。',
+  'settings.section.analytics': '分析',
+  'analytics.last14days': '過去14日間',
+  'analytics.focus': '集中',
+  'analytics.break': '休憩',
+  'analytics.effectUsage': 'エフェクト使用',
+  'analytics.noData': 'データがありません — 集中を始めましょう。',
+  'analytics.today': '今日',
+  'analytics.allTime': '累計',
+  'analytics.h': '時間',
+  'analytics.m': '分',
 };

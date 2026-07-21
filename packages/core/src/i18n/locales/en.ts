@@ -181,4 +181,14 @@ export const en: Messages = {
   'error.captureDenied':
     'Screen-recording permission was declined. The effect runs without bending the desktop.',
   'error.settingsCorrupt': 'The settings file was unreadable and has been reset to defaults.',
+  'settings.section.analytics': 'Analytics',
+  'analytics.last14days': 'Last 14 days',
+  'analytics.focus': 'Focus',
+  'analytics.break': 'Break',
+  'analytics.effectUsage': 'Effect usage',
+  'analytics.noData': 'No data yet — start a focus session.',
+  'analytics.today': 'Today',
+  'analytics.allTime': 'All time',
+  'analytics.h': 'h',
+  'analytics.m': 'm',
 };

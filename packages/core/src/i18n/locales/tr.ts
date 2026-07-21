@@ -179,4 +179,14 @@ export const tr: Messages = {
   'error.captureDenied':
     'Ekran kaydı izni verilmedi. Efekt masaüstünü bükmeden çalışıyor.',
   'error.settingsCorrupt': 'Ayar dosyası okunamadı ve varsayılanlara döndürüldü.',
+  'settings.section.analytics': 'Analiz',
+  'analytics.last14days': 'Son 14 gün',
+  'analytics.focus': 'Odak',
+  'analytics.break': 'Mola',
+  'analytics.effectUsage': 'Animasyon kullanımı',
+  'analytics.noData': 'Henüz veri yok — bir odak başlat.',
+  'analytics.today': 'Bugün',
+  'analytics.allTime': 'Tüm zamanlar',
+  'analytics.h': 'sa',
+  'analytics.m': 'dk',
 };

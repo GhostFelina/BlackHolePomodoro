@@ -182,4 +182,14 @@ export const de: Messages = {
     'Die Bildschirmaufnahme wurde abgelehnt. Der Effekt läuft, ohne den Schreibtisch zu krümmen.',
   'error.settingsCorrupt':
     'Die Einstellungsdatei war unlesbar und wurde auf die Standardwerte zurückgesetzt.',
+  'settings.section.analytics': 'Statistik',
+  'analytics.last14days': 'Letzte 14 Tage',
+  'analytics.focus': 'Fokus',
+  'analytics.break': 'Pause',
+  'analytics.effectUsage': 'Effektnutzung',
+  'analytics.noData': 'Noch keine Daten — starte eine Fokussitzung.',
+  'analytics.today': 'Heute',
+  'analytics.allTime': 'Insgesamt',
+  'analytics.h': 'Std',
+  'analytics.m': 'Min',
 };

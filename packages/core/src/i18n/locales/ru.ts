@@ -182,4 +182,14 @@ export const ru: Messages = {
     'В разрешении на запись экрана отказано. Эффект работает без искривления рабочего стола.',
   'error.settingsCorrupt':
     'Файл настроек не читался и был сброшен к значениям по умолчанию.',
+  'settings.section.analytics': 'Аналитика',
+  'analytics.last14days': 'Последние 14 дней',
+  'analytics.focus': 'Фокус',
+  'analytics.break': 'Перерыв',
+  'analytics.effectUsage': 'Использование эффектов',
+  'analytics.noData': 'Пока нет данных — начните фокус.',
+  'analytics.today': 'Сегодня',
+  'analytics.allTime': 'За всё время',
+  'analytics.h': 'ч',
+  'analytics.m': 'мин',
 };

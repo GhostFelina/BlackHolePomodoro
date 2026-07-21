@@ -182,4 +182,14 @@ export const it: Messages = {
     'Il permesso di registrazione dello schermo è stato negato. L’effetto funziona senza curvare la scrivania.',
   'error.settingsCorrupt':
     'Il file delle impostazioni era illeggibile ed è stato riportato ai valori predefiniti.',
+  'settings.section.analytics': 'Statistiche',
+  'analytics.last14days': 'Ultimi 14 giorni',
+  'analytics.focus': 'Concentrazione',
+  'analytics.break': 'Pausa',
+  'analytics.effectUsage': 'Uso degli effetti',
+  'analytics.noData': 'Ancora nessun dato — avvia una sessione.',
+  'analytics.today': 'Oggi',
+  'analytics.allTime': 'Da sempre',
+  'analytics.h': 'h',
+  'analytics.m': 'min',
 };

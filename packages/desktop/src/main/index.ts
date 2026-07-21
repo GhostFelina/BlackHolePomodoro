@@ -28,6 +28,7 @@ import {
   type Settings,
 } from '@blackholock/core';
 import { SettingsStore } from './settingsStore.js';
+import { StatsStore } from './statsStore.js';
 import { OverlayManager } from './overlay.js';
 import { trayIconFor } from './trayIcon.js';
 
@@ -56,6 +57,7 @@ if (!app.requestSingleInstanceLock()) {
 
 class BlackHolock {
   private readonly store = new SettingsStore();
+  private readonly stats = new StatsStore();
   private readonly engine: FocusEngine;
   private readonly i18n = new I18n();
   private overlay!: OverlayManager;
@@ -65,6 +67,8 @@ class BlackHolock {
   private molaVerTimer: NodeJS.Timeout | null = null;
   private breakSoonNotified = false;
   private lastRenderedTrayTitle = '';
+  /** Wall time of the last stats sample, so a tick records real elapsed time. */
+  private lastStatsAt = 0;
 
   constructor() {
     const settings = this.store.get();
@@ -135,6 +139,23 @@ class BlackHolock {
         void this.overlay.captureTo(`/tmp/cap_${Date.now()}.png`);
       }, every);
     }
+    if (process.env.DEBUG_SETTINGS_CAP) {
+      this.openSettings();
+      setTimeout(() => {
+        const w = this.settingsWindow;
+        if (!w || w.isDestroyed()) return;
+        w.webContents.send('settings:navigate', process.env.DEBUG_SETTINGS_CAP);
+        setTimeout(() => {
+          w.webContents
+            .capturePage()
+            .then((img) => import('node:fs').then((fs) => {
+              fs.writeFileSync('/tmp/settings_cap.png', img.toPNG());
+              console.log('[BlackHolock] settings captured → /tmp/settings_cap.png');
+            }))
+            .catch((e) => console.error('[BlackHolock] settings-cap failed:', e));
+        }, 900);
+      }, 3500);
+    }
 
     const storeError = this.store.takeError();
     if (storeError) {
@@ -165,6 +186,7 @@ class BlackHolock {
   /** Runs the 500 ms countdown tick only while a cycle is live. */
   private startTicking(): void {
     if (this.tickTimer) return;
+    this.lastStatsAt = Date.now();
     this.tickTimer = setInterval(() => this.tick(), 500);
   }
 
@@ -177,8 +199,28 @@ class BlackHolock {
 
   private tick(): void {
     const snapshot = this.engine.tick();
+    this.recordStats(snapshot);
     this.maybeNotifyBreakSoon(snapshot);
     this.refreshTray(snapshot);
+  }
+
+  /**
+   * Attributes the real time elapsed since the last sample to focus or break.
+   * Focus and warning both count as focused work; only a running (not paused)
+   * break counts as break time.
+   */
+  private recordStats(snapshot: EngineSnapshot): void {
+    const now = Date.now();
+    const delta = (now - this.lastStatsAt) / 1000;
+    this.lastStatsAt = now;
+    // Ignore the first tick and any implausibly large gap (sleep, clock jump).
+    if (delta <= 0 || delta > 5) return;
+
+    if (snapshot.phase === 'focus' || snapshot.phase === 'warning') {
+      this.stats.record('focus', delta, this.store.get().effectId, now);
+    } else if (snapshot.phase === 'break' && !this.engine.isPaused) {
+      this.stats.record('break', delta, this.store.get().effectId, now);
+    }
   }
 
   private handlePhaseChange(next: Phase, previous: Phase): void {
@@ -720,6 +762,8 @@ class BlackHolock {
       return this.engine.getSyncState();
     });
 
+    ipcMain.handle('stats:get', () => this.stats.get());
+
     ipcMain.handle('app:info', () => ({
       name: PRODUCT.name,
       version: PRODUCT.version,
@@ -756,6 +800,7 @@ class BlackHolock {
   private quit(): void {
     globalShortcut.unregisterAll();
     this.store.flush();
+    this.stats.flush();
     if (this.tickTimer) clearInterval(this.tickTimer);
     this.overlay.dispose();
     this.tray?.destroy();
