@@ -541,14 +541,12 @@ void main() {
   color *= 1.74;
 
   float discLum = clamp(dot(disc, vec3(0.30, 0.59, 0.11)) * 2.6, 0.0, 1.0);
-  // The hole carries its own lensed star field with it as it grows, so the
-  // gravitational bending of a real, detailed background is visible from the
-  // first moment — cinematic, not a zoom of an empty dot. Dark space stays
-  // mostly transparent early (so it does not smother the desktop) and fills in
-  // to fully opaque as the break takes over.
-  float bgLum   = clamp(dot(background, vec3(0.30, 0.59, 0.11)) * 3.0, 0.0, 1.0);
-  float fill    = smoothstep(0.15, 0.85, uGrowth);
-  float cosmos  = mix(max(bgLum, 0.18 * fill), 1.0, fill) * lensStrength;
+  // A porthole into deep space that the hole carries with it from the first
+  // frame: opaque enough that the lensed, streaming starfield — the actual
+  // bending of spacetime — is obvious immediately, not a faint wash over the
+  // desktop. It fills to fully cover the screen as the break takes over.
+  float fill    = smoothstep(0.02, 0.7, uGrowth);
+  float cosmos  = mix(0.62, 1.0, fill) * lensStrength;
 
   float alpha;
   if (uHasScreen > 0.5) {

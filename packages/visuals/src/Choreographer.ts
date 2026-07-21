@@ -41,7 +41,9 @@ export interface ChoreographyInput {
 
 export const SWALLOW_SECONDS = 2.2;
 export const COLLAPSE_SECONDS = 1.2;
-const BIRTH_SECONDS = 2.5;
+// Fade the hole in quickly — it should arrive as a fully-formed black hole with
+// a spinning disc, not a dim dot that slowly resolves.
+const BIRTH_SECONDS = 0.9;
 
 /**
  * The break shows the real black hole at rest — the same Gargantua the
@@ -60,7 +62,7 @@ const BREAK_RADIUS = 0.3;
  * that it should register as a distant object you noticed, not as an animation
  * that started playing at you.
  */
-const STATIC_HOLD = 0.30;
+const STATIC_HOLD = 0.06;
 
 /** Base wander frequency. Low enough that no single sine is trackable. */
 const WANDER_HZ = 0.075;
@@ -171,11 +173,11 @@ export class Choreographer {
         // still. Exponential growth is also what an object approaching at
         // constant speed actually does to your field of view: almost nothing
         // for most of the approach, then everything at the end.
-        const minRadius = Math.max(5, minEdge * 0.0045);
-        // The warning ends with a moderate hole over the desktop; the swallow is
-        // what makes it big. Growing all the way to the final size here left
-        // nothing for the swallow to do.
-        const maxRadius = minEdge * 0.14;
+        // Born already large enough that the accretion disc, its rotation and the
+        // lensing read immediately — the hole should look like the full break
+        // effect from the first frame, only smaller, never a faint speck.
+        const minRadius = minEdge * 0.055;
+        const maxRadius = minEdge * 0.16;
 
         const advance = p <= STATIC_HOLD ? 0 : (p - STATIC_HOLD) / (1 - STATIC_HOLD);
         const shaped = Math.pow(advance, 2.3);
