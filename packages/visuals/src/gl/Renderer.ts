@@ -126,7 +126,7 @@ export class EffectRenderer {
   // large, the buffer is scaled to hit a frame-time budget. Dropping to 60 %
   // scale is barely perceptible on a soft gradient; dropping frames is not.
   private renderScaleFactor = 1;
-  private budgetMs = 11;          // leaves headroom inside a 16.7 ms frame
+  private budgetMs = 26;
   private lastAdaptAt = 0;
   private scaleDirty = false;
 
@@ -478,7 +478,8 @@ export class EffectRenderer {
 
     const previous = this.renderScaleFactor;
     if (this.gpuMs > this.budgetMs * 1.25) {
-      this.renderScaleFactor = Math.max(0.4, this.renderScaleFactor * 0.88);
+      // Never drop below 0.72: a soft-but-sharp-enough frame beats a mushy one.
+      this.renderScaleFactor = Math.max(0.68, this.renderScaleFactor * 0.9);
     } else if (this.gpuMs < this.budgetMs * 0.55) {
       this.renderScaleFactor = Math.min(1, this.renderScaleFactor * 1.06);
     }

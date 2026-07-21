@@ -62,11 +62,11 @@ let breakMode: 'off' | 'pending' | 'active' = 'off';
 let autoBeginAt = 0;
 
 const renderer = new EffectRenderer(canvas, {
-  // The shader itself costs ~0.1 ms/frame; the expensive part of a fullscreen
-  // transparent overlay is the OS compositor blending it over everything else.
-  // Capping the buffer at 2048 on the long edge cuts that cost by ~2x and is
-  // visually indistinguishable, because the effect is all smooth gradients.
-  maxRenderEdge: 2048,
+  // The black hole is a ray-march with fine filaments and sharp lensed edges, so
+  // it needs real resolution — a low cap made the fully-grown hole visibly soft.
+  // The buffer follows the display up to 3200 on the long edge; adaptive scaling
+  // still trims it if a weaker GPU cannot keep the frame budget.
+  maxRenderEdge: 2560,
   onUnavailable: (reason) => console.error('[BlackHolock]', reason),
   onContextLost: () => {
     // Losing the context must not trap the user behind a frozen black screen.

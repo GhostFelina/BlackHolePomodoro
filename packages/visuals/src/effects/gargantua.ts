@@ -55,7 +55,7 @@ import type { FocusEffect } from './types.js';
  * look majestic rather than busy.
  */
 
-const STEPS = 110;
+const STEPS = 40;
 
 export const gargantua: FocusEffect = {
   id: 'gargantua',
@@ -153,60 +153,23 @@ vec3 discColour(float t) {
 //                            distribution and colours drawn from stellar
 //                            temperature classes
 vec3 deepSky(vec2 sky, float time) {
-  // Tilt the galactic plane so it does not sit parallel to the disc.
-  float ga = sky.x * 0.85 + 0.4;
-  float gb = sky.y + sin(sky.x * 0.6) * 0.22;
-  vec2  gal = vec2(ga, gb);
+  // A clean, deep starfield — no galaxy glow, no nebula haze. The lensing bends
+  // crisp stars, which reads far more like real gravitational lensing than
+  // bending a cloud. The galactic band is kept only as a density gradient so
+  // the stars concentrate along a line rather than scattering uniformly.
+  float gb   = sky.y + sin(sky.x * 0.6) * 0.22;
+  float band = exp(-gb * gb * 5.5);
 
-  // --- 1. galactic band ----------------------------------------------------
-  float bandDist = abs(gb);
-  float band = exp(-bandDist * bandDist * 5.5);
-  float core = exp(-(ga * ga) * 0.30) * exp(-bandDist * bandDist * 11.0);
-
-  float dust = fbm(gal * vec2(2.2, 7.0) + vec2(time * 0.002, 0.0));
-  float lanes = smoothstep(0.42, 0.78, dust);
-
-  vec3 bandWarm = vec3(0.130, 0.112, 0.090);
-  vec3 bandCore = vec3(0.245, 0.200, 0.145);
-  vec3 galaxy = mix(bandWarm, bandCore, core) * band;
-  galaxy *= 1.0 - lanes * 0.78;              // dust lanes cut the band
-  galaxy += bandCore * core * 0.55;
-
-  // --- 2. emission nebulae -------------------------------------------------
-  vec2  nUv    = gal * 1.15 + vec2(time * 0.0016, -time * 0.0009);
-  float clouds = warpedFbm(nUv);
-  float wisp   = warpedFbm(nUv * 2.6 + 11.0);
-
-  // Hydrogen alpha dominates real emission nebulae; doubly-ionised oxygen
-  // gives the teal. Mixing on a second noise field keeps them from tracking
-  // each other and looking like one tinted cloud.
-  vec3 hAlpha = vec3(0.205, 0.050, 0.072);
-  vec3 oIII   = vec3(0.042, 0.115, 0.135);
-  vec3 nebula = mix(hAlpha, oIII, smoothstep(0.35, 0.72, wisp));
-  // A high threshold keeps the nebulae as distinct structures. Lower and they
-  // merge into a uniform haze that reads as fog rather than sky.
-  nebula *= smoothstep(0.58, 0.96, clouds) * (0.45 + 0.90 * band);
-
-  // A cooler reflection component where the gas is thickest.
-  nebula += vec3(0.048, 0.070, 0.135) * smoothstep(0.74, 0.99, clouds) * 0.85;
-
-  // --- 3. dark nebulae -----------------------------------------------------
-  // Cold dust in front of everything. Subtracting rather than adding is what
-  // makes a sky look photographed instead of painted.
-  float darkDust = smoothstep(0.55, 0.86, warpedFbm(gal * 1.9 + 31.0));
-  vec3 sky3 = (galaxy + nebula) * (1.0 - darkDust * 0.84);
-
-  sky3 *= uNebula;
-
-  // --- 4. stars ------------------------------------------------------------
+  // --- stars ---------------------------------------------------------------
   vec3 stars = vec3(0.0);
-  for (int layer = 0; layer < 4; layer++) {
-    float scale = 46.0 + float(layer) * 52.0;
+  for (int layer = 0; layer < 5; layer++) {
+    float scale = 42.0 + float(layer) * 48.0;
     vec2  cell  = floor(sky * scale);
     float rnd   = hash21(cell + float(layer) * 37.13);
 
-    // More stars inside the galactic band, as in reality.
-    float cutoff = mix(0.9805, 0.9600, band) - (uStarDensity - 1.0) * 0.012;
+    // A denser field than before, so the lensed sky is rich enough to make the
+    // bending obvious. More stars inside the galactic band, as in reality.
+    float cutoff = mix(0.9680, 0.9350, band) - (uStarDensity - 1.0) * 0.014;
     if (rnd <= cutoff) continue;
 
     float mag    = (rnd - cutoff) / max(1.0 - cutoff, 1e-4);
@@ -231,7 +194,7 @@ vec3 deepSky(vec2 sky, float time) {
     stars += tint * (point + spike * 0.22) * twk * (0.30 + 1.70 * bright);
   }
 
-  return sky3 + stars * uStarDensity;
+  return stars * uStarDensity;
 }
 
 /**
@@ -411,10 +374,12 @@ void main() {
 
       float t = clamp((rd - DISC_IN) / (DISC_OUT - DISC_IN), 0.0, 1.0);
 
-      // Keplerian shear in the disc's own rotating frame.
+      // Keplerian shear in the disc's own rotating frame. The direction is
+      // reversed from before, and the rate is high enough that the material
+      // clearly streams around the hole rather than sitting still.
       float phi   = atan(pos.z, pos.x);
       float omega = pow(max(rd, 0.5), -1.5);
-      float sw    = phi + spin * omega * 34.0;
+      float sw    = phi - spin * omega * 34.0;
 
       // Two scales of filament: broad streams, then fine structure inside them.
       // Anisotropic sampling: the noise is stretched hard along the direction
@@ -446,7 +411,11 @@ void main() {
       profile *= smoothstep(0.0, 0.06, t);              // soft inner edge
       profile *= 1.0 - smoothstep(0.78, 1.0, t);        // soft outer edge
 
-      vec3 emission = discColour(1.0 - t) * profile * fil * density;
+      // A broad brightness swell that orbits at one clear rate. Coupled with the
+      // streaming filaments it is what makes the disc read as spinning material,
+      // not a frozen photograph.
+      float hot = 0.82 + 0.34 * (0.5 + 0.5 * cos(phi - uTime * 0.55 * max(uDiscSpeed, 0.3)));
+      vec3 emission = discColour(1.0 - t) * profile * fil * density * hot;
 
       // Doppler beaming and gravitational shift, scaled by DOPPLER. At the
       // shipped value this is a hint of asymmetry, not a blackout.
