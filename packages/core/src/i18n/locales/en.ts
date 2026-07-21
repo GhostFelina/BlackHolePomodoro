@@ -156,7 +156,7 @@ export const en: Messages = {
 
   'effect.gargantua.name': 'Gargantua',
   'effect.gargantua.description':
-    'A lensed black hole with an accretion disc, drifting star field and nebula.',
+    'A lensed black hole with a spinning accretion disc and a deep, drifting star field.',
   'effect.inferno.name': 'Inferno',
   'effect.inferno.description': 'A simulation-style disc in red and orange against empty black.',
   'effect.halo.name': 'Halo',

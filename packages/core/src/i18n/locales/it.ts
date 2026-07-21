@@ -156,7 +156,7 @@ export const it: Messages = {
 
   'effect.gargantua.name': 'Gargantua',
   'effect.gargantua.description':
-    'Un buco nero con lente gravitazionale, disco di accrescimento, campo stellare e nebulosa.',
+    'Un buco nero con lente, disco di accrescimento rotante e un profondo campo stellare.',
   'effect.inferno.name': 'Inferno',
   'effect.inferno.description': 'Un disco in stile simulazione, rosso e arancio su nero vuoto.',
   'effect.halo.name': 'Alone',

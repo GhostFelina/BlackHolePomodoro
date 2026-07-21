@@ -155,7 +155,7 @@ export const ja: Messages = {
 
   'effect.gargantua.name': 'ガルガンチュア',
   'effect.gargantua.description':
-    '降着円盤と漂う星野、星雲をともなう重力レンズ効果のブラックホール。',
+    '回転する降着円盤と深い星空を持つ、重力レンズ効果のあるブラックホール。',
   'effect.inferno.name': 'インフェルノ',
   'effect.inferno.description': '何もない黒を背に、赤と橙のシミュレーション調の円盤。',
   'effect.halo.name': 'ヘイロー',

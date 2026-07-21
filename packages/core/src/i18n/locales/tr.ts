@@ -154,7 +154,7 @@ export const tr: Messages = {
 
   'effect.gargantua.name': 'Gargantua',
   'effect.gargantua.description':
-    'Akresyon diski, gezinen yıldız alanı ve bulutsusu olan merceklenmiş bir kara delik.',
+    'Dönen akresyon diski ve derin, gezinen yıldız alanı olan merceklenmiş bir kara delik.',
   'effect.inferno.name': 'Cehennem',
   'effect.inferno.description': 'Boş karanlıkta kırmızı ve turuncu, simülasyon tarzı bir disk.',
   'effect.halo.name': 'Hale',

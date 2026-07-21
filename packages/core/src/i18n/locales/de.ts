@@ -156,7 +156,7 @@ export const de: Messages = {
 
   'effect.gargantua.name': 'Gargantua',
   'effect.gargantua.description':
-    'Ein gravitativ gelinstes Schwarzes Loch mit Akkretionsscheibe, driftendem Sternenfeld und Nebel.',
+    'Ein gelinstes Schwarzes Loch mit rotierender Akkretionsscheibe und tiefem Sternenfeld.',
   'effect.inferno.name': 'Inferno',
   'effect.inferno.description': 'Eine Scheibe im Simulationsstil in Rot und Orange vor leerem Schwarz.',
   'effect.halo.name': 'Halo',

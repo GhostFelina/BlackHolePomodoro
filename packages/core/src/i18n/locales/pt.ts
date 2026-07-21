@@ -156,7 +156,7 @@ export const pt: Messages = {
 
   'effect.gargantua.name': 'Gargântua',
   'effect.gargantua.description':
-    'Um buraco negro com lente gravitacional, disco de acreção, campo de estrelas e nebulosa.',
+    'Um buraco negro com lente, disco de acreção giratório e um campo estelar profundo.',
   'effect.inferno.name': 'Inferno',
   'effect.inferno.description': 'Um disco em estilo simulação, vermelho e laranja sobre preto vazio.',
   'effect.halo.name': 'Halo',

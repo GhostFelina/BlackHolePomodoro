@@ -155,7 +155,7 @@ export const ar: Messages = {
 
   'effect.gargantua.name': 'غارغانتوا',
   'effect.gargantua.description':
-    'ثقب أسود بعدسة جاذبية وقرص تراكم وحقل نجوم وسديم.',
+    'ثقب أسود بعدسة جاذبية مع قرص تنامٍ دوّار وحقل نجوم عميق.',
   'effect.inferno.name': 'جحيم',
   'effect.inferno.description': 'قرص بأسلوب المحاكاة بالأحمر والبرتقالي على سواد خالٍ.',
   'effect.halo.name': 'هالة',

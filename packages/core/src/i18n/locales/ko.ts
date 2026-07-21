@@ -155,7 +155,7 @@ export const ko: Messages = {
 
   'effect.gargantua.name': '가르강튀아',
   'effect.gargantua.description':
-    '강착 원반과 흐르는 별밭, 성운을 두른 중력 렌즈 블랙홀.',
+    '회전하는 강착 원반과 깊은 별밭을 지닌 중력 렌즈 블랙홀.',
   'effect.inferno.name': '인페르노',
   'effect.inferno.description': '텅 빈 검정을 배경으로 한 붉고 주황빛의 시뮬레이션풍 원반.',
   'effect.halo.name': '헤일로',
