@@ -465,7 +465,20 @@ void main() {
     vec2 samplePx   = pixel + vec2(deflection.x, -deflection.y);
 
     if (uHasScreen > 0.5 && denom > 0.05) {
-      background = sampleScreen(samplePx);
+      // The desktop is not merely bent around the hole — it is *pulled into*
+      // it. Each pixel shows content dragged in from further out, hardest just
+      // outside the horizon and easing to nothing at the influence edge, with
+      // a frame-dragging twist that winds the screen around the spin axis and
+      // a slow breathing so the pull reads as a living force.
+      float rr    = max(rPix, rs);
+      float pull  = uSuction * rs * (0.55 + 0.07 * sin(uTime * 0.45))
+                  * exp(-(rr - rs) / (rs * 2.2)) * lensStrength;
+      vec2  dirOut = d / max(rPix, 1.0);
+      float tw    = uSuction * 0.55 * (rs / rr) * lensStrength;
+      float cs = cos(tw), sn = sin(tw);
+      vec2 q = samplePx + dirOut * pull - uCenter;
+      q = vec2(q.x * cs - q.y * sn, q.x * sn + q.y * cs);
+      background = sampleScreen(uCenter + q);
     }
 
     // ------------------------------------------------------------- the sky
@@ -494,7 +507,10 @@ void main() {
       field = mix(cool, deep, smoothstep(0.40, 0.78, split)) + knot;
     }
 
-    background += field;
+    // Over a captured desktop the stars stay faint until the break fills in,
+    // so the bending and suction of the real screen remain the star of the
+    // growth phase; without a capture the field is the whole background.
+    background += field * mix(1.0, 0.25 + 0.75 * smoothstep(0.6, 1.0, uGrowth), uHasScreen);
   }
 
   // --------------------------------------------------------- photon ring
@@ -541,12 +557,13 @@ void main() {
   color *= 1.74;
 
   float discLum = clamp(dot(disc, vec3(0.30, 0.59, 0.11)) * 2.6, 0.0, 1.0);
-  // A porthole into deep space that the hole carries with it from the first
-  // frame: opaque enough that the lensed, streaming starfield — the actual
-  // bending of spacetime — is obvious immediately, not a faint wash over the
-  // desktop. It fills to fully cover the screen as the break takes over.
-  float fill    = smoothstep(0.02, 0.7, uGrowth);
-  float cosmos  = mix(0.62, 1.0, fill) * lensStrength;
+  // Without a desktop capture the hole carries a porthole of deep space with it
+  // from the first frame, so the lensed starfield is obvious immediately. With
+  // a capture, the *real screen* is the thing being bent and swallowed, so the
+  // space fill only takes over as the break arrives.
+  float fill     = smoothstep(0.02, 0.7, uGrowth);
+  float porthole = mix(0.62, 1.0, fill);
+  float cosmos   = mix(porthole, smoothstep(0.12, 0.75, uGrowth), uHasScreen) * lensStrength;
 
   float alpha;
   if (uHasScreen > 0.5) {

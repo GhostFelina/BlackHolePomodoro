@@ -233,6 +233,16 @@
               </span>
             </label>
 
+            <!-- Shown while lensing is on but macOS has not granted screen
+                 recording; opens the System Settings pane. -->
+            <button
+              id="grantScreen"
+              type="button"
+              class="ghost inline"
+              hidden
+              data-i18n="settings.screenLensing.permission"
+            ></button>
+
             <label class="switch">
               <input type="checkbox" id="reducedMotion" />
               <span class="switch-body"><i></i></span>

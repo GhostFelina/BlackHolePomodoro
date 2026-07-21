@@ -472,6 +472,10 @@ function setupControls(): void {
   cycles.addEventListener('input', () => writeCyclesOutput(Number(cycles.value)));
   cycles.addEventListener('change', () => void patch({ sessionCycles: Number(cycles.value) }));
 
+  // Screen-recording permission for desktop lensing. The button opens the
+  // System Settings pane; macOS applies the change when the app relaunches.
+  $id('grantScreen').addEventListener('click', () => void api.capture.openPreferences());
+
   $id<HTMLInputElement>('languageSearch').addEventListener('input', renderLanguages);
 
   $id('save').addEventListener('click', () => void save());
@@ -541,6 +545,11 @@ function syncControls(): void {
   writeCyclesOutput(settings.sessionCycles);
   // The cycle count only bites while auto-continue is on.
   $id('sessionCyclesField').hidden = !settings.autoContinue;
+
+  // Surface the grant button only when lensing wants a permission it lacks.
+  void api.capture.permission().then((status) => {
+    $id('grantScreen').hidden = !settings.screenLensing || status === 'granted';
+  });
 
   for (const slider of EFFECT_SLIDERS) {
     const value = settings[slider.id as keyof Settings] as number;

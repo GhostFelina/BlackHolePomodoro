@@ -106,7 +106,7 @@ export const DEFAULT_SETTINGS: Settings = Object.freeze({
   autoStartOnLaunch: false,
 
   effectId: 'gargantua',
-  screenLensing: false,
+  screenLensing: true,
   maxFps: 0,
   intensity: 1,
   accent: 'ember',
