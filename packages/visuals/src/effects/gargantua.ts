@@ -254,11 +254,54 @@ vec3 breakScene(vec2 uv, vec2 res, float time) {
   // rendered as a starburst of streaks radiating from the middle.
   vec2 sky = p * 2.1 + vec2(time * 0.006, time * 0.004);
 
-  vec3 field = deepSky(sky, time) * 1.35;
-
-  // A cool cast: away from the disc there is nothing to make the sky warm.
+  // Just the stars (the nebula is off by default). A faint cool cast keeps the
+  // field from reading warm without the galaxy to colour it.
+  vec3 field = deepSky(sky, time) * 1.20;
   float lum = dot(field, vec3(0.30, 0.59, 0.11));
-  field = mix(field, vec3(0.30, 0.42, 0.86) * lum * 1.30, 0.55);
+  field = mix(field, vec3(0.34, 0.44, 0.82) * lum * 1.25, 0.45);
+
+  // --- the black hole, centred ---------------------------------------------
+  // A stylised, aesthetic hole (not the full ray-march) so the break scene can
+  // run full-screen with a starfield. It honours the Appearance settings that
+  // matter here: disc brightness, disc rotation and the accent colour.
+  float horizon   = 0.12;
+  float ringR     = horizon * 1.14;
+  float discInner = horizon * 1.55;
+  float discOuter = horizon * 3.1;
+  float tilt      = 0.30;                       // near-edge-on ellipse
+
+  float eq   = length(vec2(p.x, p.y / tilt));   // elliptical disc radius
+  float ang  = atan(p.y / tilt, p.x);
+  float spin = uReducedMotion > 0.5 ? 0.0 : time * 0.45 * max(uDiscSpeed, 0.15);
+  // Turbulent, rotating emission: the swirl is what sells the spacetime motion.
+  float swirl = 0.55 + 0.45 * sin(ang * 2.0 - spin * 2.4 + eq * 20.0);
+  float band  = smoothstep(discInner, discInner * 1.14, eq)
+              * (1.0 - smoothstep(discOuter * 0.78, discOuter, eq));
+  // The far half of the disc passes behind the sphere; only the near half is
+  // in front — that occlusion is what reads as a hole, not a ring.
+  if (dist < horizon && p.y < 0.0) band = 0.0;
+
+  // Gravitational arcs lifting over the top and under the bottom.
+  float arcR = horizon * 1.5;
+  float arc  = exp(-pow((dist - arcR) / (horizon * 0.18), 2.0))
+             * pow(abs(p.y) / max(dist, 1e-3), 1.3);
+
+  float discAmt = clamp(max(band * swirl, arc * 0.9), 0.0, 1.0);
+  float heat    = 1.0 - smoothstep(discInner, discOuter, min(eq, dist));
+  vec3  warm    = mix(vec3(1.0, 0.62, 0.26), uAccent, 0.35);
+  vec3  discCol = warm * mix(0.72, 1.28, heat) * discAmt * max(uDiscBrightness, 0.2) * 1.30;
+
+  // Photon ring: the bright, sharp circle at the shadow's edge.
+  float ring    = exp(-pow((dist - ringR) / (horizon * 0.085), 2.0));
+  vec3  ringCol = mix(vec3(1.0, 0.96, 0.88), uAccent, 0.15) * ring * 0.75;
+
+  // Event horizon: pure black. Stars behind it vanish; the disc/ring that cross
+  // in front stay lit.
+  float core = 1.0 - smoothstep(horizon - 0.004, horizon + 0.004, dist);
+  field *= (1.0 - core);
+  vec3 hole = discCol + ringCol;
+  field += hole;
+  field = mix(field, vec3(0.0), core * (1.0 - clamp(discAmt + ring, 0.0, 1.0)));
 
   // --- meteors -------------------------------------------------------------
   // Three lanes, each firing on its own slow cycle. A streak is a distance to
@@ -336,8 +379,10 @@ void main() {
   vec3  hvec = cross(pos, vel);
   float h2   = dot(hvec, hvec);
 
-  // Slow on purpose. This is a hundred million solar masses.
-  float spin = uReducedMotion > 0.5 ? 0.0 : uTime * 0.09 * uDiscSpeed;
+  // The rotation is what makes the disc read as living material rather than a
+  // still photograph, so it is pushed well past the physically slow rate a
+  // supermassive hole would truly have — the swirl needs to be obvious.
+  float spin = uReducedMotion > 0.5 ? 0.0 : uTime * 0.42 * uDiscSpeed;
 
   // ------------------------------------------------------------- integrate
   vec3  disc     = vec3(0.0);
@@ -392,8 +437,9 @@ void main() {
 
       float fil = base * 0.46 + ridge * ridge * 0.36 + fine * fine * 0.18;
       // Steeper than square: widens the dark gaps between streams so the
-      // bright ones read as distinct strands.
-      fil = 0.06 + 2.45 * fil * fil * fil;
+      // bright ones read as distinct strands that are visible as they orbit,
+      // rather than melting into one smooth, static-looking band.
+      fil = 0.035 + 3.15 * fil * fil * fil;
 
       // Radial brightness: bright inner rim falling off outward.
       float profile = pow(1.0 - t, 1.9);
@@ -526,7 +572,14 @@ void main() {
   color *= 1.74;
 
   float discLum = clamp(dot(disc, vec3(0.30, 0.59, 0.11)) * 2.6, 0.0, 1.0);
-  float cosmos  = smoothstep(0.12, 0.75, uGrowth) * lensStrength;
+  // The hole carries its own lensed star field with it as it grows, so the
+  // gravitational bending of a real, detailed background is visible from the
+  // first moment — cinematic, not a zoom of an empty dot. Dark space stays
+  // mostly transparent early (so it does not smother the desktop) and fills in
+  // to fully opaque as the break takes over.
+  float bgLum   = clamp(dot(background, vec3(0.30, 0.59, 0.11)) * 3.0, 0.0, 1.0);
+  float fill    = smoothstep(0.15, 0.85, uGrowth);
+  float cosmos  = mix(max(bgLum, 0.18 * fill), 1.0, fill) * lensStrength;
 
   float alpha;
   if (uHasScreen > 0.5) {

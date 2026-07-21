@@ -43,6 +43,8 @@ export interface FocusEngineOptions {
   timeScale?: number;
   /** Start a fresh cycle automatically when a break ends. */
   autoContinue?: boolean;
+  /** Stop after this many complete cycles. 0 means never stop on its own. */
+  targetCycles?: number;
   /** Injectable clock (milliseconds since epoch) for deterministic tests. */
   now?: () => number;
 }
@@ -63,6 +65,10 @@ export interface EngineSyncState {
   durations: CycleDurations;
   timeScale: number;
   autoContinue: boolean;
+  targetCycles: number;
+  /** When the engine is frozen (e.g. waiting on the Mola Ver gate), the wall
+   * time it was frozen at; null when running normally. */
+  pausedAt: number | null;
 }
 
 type PhaseListener = (next: Phase, previous: Phase, snapshot: EngineSnapshot) => void;
@@ -71,11 +77,13 @@ export class FocusEngine {
   private durations: CycleDurations;
   private timeScale: number;
   private autoContinue: boolean;
+  private targetCycles: number;
   private readonly now: () => number;
 
   private running = false;
   private cycleStartMs: number | null = null;
   private completedCycles = 0;
+  private pausedAt: number | null = null;
   private lastPhase: Phase = 'idle';
   private phaseListeners = new Set<PhaseListener>();
 
@@ -83,7 +91,13 @@ export class FocusEngine {
     this.durations = normalizeDurations(options.durations);
     this.timeScale = options.timeScale && options.timeScale > 0 ? options.timeScale : 1;
     this.autoContinue = options.autoContinue ?? true;
+    this.targetCycles = Math.max(0, Math.floor(options.targetCycles ?? 0));
     this.now = options.now ?? (() => Date.now());
+  }
+
+  /** The clock the evaluation uses: frozen while paused, live otherwise. */
+  private clock(): number {
+    return this.pausedAt ?? this.now();
   }
 
   // ---------------------------------------------------------------- lifecycle
@@ -91,6 +105,7 @@ export class FocusEngine {
   start(): EngineSnapshot {
     this.cycleStartMs = this.now();
     this.completedCycles = 0;
+    this.pausedAt = null;
     this.running = true;
     return this.emit();
   }
@@ -98,12 +113,37 @@ export class FocusEngine {
   stop(): EngineSnapshot {
     this.running = false;
     this.cycleStartMs = null;
+    this.pausedAt = null;
     return this.emit();
+  }
+
+  /**
+   * Freezes the whole engine at the current instant. Used by the Mola Ver gate
+   * to hold the break at its full length until the user (or a timeout) begins
+   * it. Idempotent, and a no-op unless a cycle is running.
+   */
+  pause(): EngineSnapshot {
+    if (this.running && this.pausedAt === null) this.pausedAt = this.now();
+    return this.snapshot();
+  }
+
+  /** Resumes from a pause, shifting the cycle so no frozen time is counted. */
+  resume(): EngineSnapshot {
+    if (this.pausedAt !== null && this.cycleStartMs !== null) {
+      this.cycleStartMs += this.now() - this.pausedAt;
+    }
+    this.pausedAt = null;
+    return this.emit();
+  }
+
+  get isPaused(): boolean {
+    return this.pausedAt !== null;
   }
 
   /** Jump straight into the break, skipping any remaining focus time. */
   breakNow(): EngineSnapshot {
     if (!this.running) return this.snapshot();
+    this.pausedAt = null;
     this.cycleStartMs = this.now() - this.scaled(this.durations.workSeconds) * 1000;
     return this.emit();
   }
@@ -111,6 +151,15 @@ export class FocusEngine {
   /** End the break early and begin the next focus cycle immediately. */
   skipBreak(): EngineSnapshot {
     if (!this.running) return this.snapshot();
+    this.pausedAt = null;
+    // Skipping the final cycle of a bounded session ends it rather than
+    // rolling into a cycle the user did not ask for.
+    if (this.targetCycles > 0 && this.completedCycles + 1 >= this.targetCycles) {
+      this.completedCycles = this.targetCycles;
+      this.running = false;
+      this.cycleStartMs = null;
+      return this.emit();
+    }
     this.completedCycles += 1;
     this.cycleStartMs = this.now();
     return this.emit();
@@ -119,6 +168,7 @@ export class FocusEngine {
   /** Restart the current cycle from zero without touching the cycle counter. */
   restartCycle(): EngineSnapshot {
     if (!this.running) return this.snapshot();
+    this.pausedAt = null;
     this.cycleStartMs = this.now();
     return this.emit();
   }
@@ -139,6 +189,11 @@ export class FocusEngine {
 
   setAutoContinue(value: boolean): void {
     this.autoContinue = value;
+  }
+
+  /** 0 means unlimited; otherwise the session stops after this many cycles. */
+  setTargetCycles(value: number): void {
+    this.targetCycles = Math.max(0, Math.floor(value));
   }
 
   get isRunning(): boolean {
@@ -168,6 +223,8 @@ export class FocusEngine {
       durations: { ...this.durations },
       timeScale: this.timeScale,
       autoContinue: this.autoContinue,
+      targetCycles: this.targetCycles,
+      pausedAt: this.pausedAt,
     };
   }
 
@@ -179,6 +236,8 @@ export class FocusEngine {
     this.durations = normalizeDurations(state.durations);
     this.timeScale = state.timeScale > 0 ? state.timeScale : 1;
     this.autoContinue = state.autoContinue;
+    this.targetCycles = Math.max(0, Math.floor(state.targetCycles ?? 0));
+    this.pausedAt = state.pausedAt ?? null;
     return this.emit();
   }
 
@@ -196,16 +255,25 @@ export class FocusEngine {
     const brk = this.scaled(this.durations.breakSeconds);
     const cycleSeconds = work + brk;
 
-    let elapsed = (this.now() - this.cycleStartMs) / 1000;
+    let elapsed = (this.clock() - this.cycleStartMs) / 1000;
 
     if (elapsed >= cycleSeconds) {
       if (!this.autoContinue) {
         // Park at the very end of the break until the user starts again.
         this.running = false;
         this.cycleStartMs = null;
+        this.pausedAt = null;
         return IDLE_SNAPSHOT;
       }
       const finished = Math.floor(elapsed / cycleSeconds);
+      // A cycle target ends the session once it is reached.
+      if (this.targetCycles > 0 && this.completedCycles + finished >= this.targetCycles) {
+        this.completedCycles = this.targetCycles;
+        this.running = false;
+        this.cycleStartMs = null;
+        this.pausedAt = null;
+        return IDLE_SNAPSHOT;
+      }
       this.completedCycles += finished;
       this.cycleStartMs += finished * cycleSeconds * 1000;
       elapsed -= finished * cycleSeconds;

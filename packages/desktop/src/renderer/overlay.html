@@ -10,13 +10,38 @@
     <link rel="stylesheet" href="./styles/overlay.css" />
   </head>
   <body>
+    <!-- Dark backing for the break, BEHIND the canvas. It darkens the whole
+         screen so the break owns it, while the black hole still draws on top of
+         it. Pure CSS, so the break stays dark and legible even if WebGL fails. -->
+    <div id="backdrop" class="backdrop"></div>
+
     <canvas id="stage"></canvas>
 
     <section id="break" class="break-layer" aria-live="polite">
-      <p id="countdown" class="countdown">00:00</p>
-      <p id="subtitle" class="subtitle"></p>
-      <p id="notice" class="notice"></p>
+      <!-- Kept in the black upper half of the hole, clear of the bright disc
+           band across the middle, so the text stays readable. -->
+      <div class="break-copy">
+        <p id="countdown" class="countdown">00:00</p>
+        <p id="subtitle" class="subtitle"></p>
+        <p id="notice" class="notice"></p>
+      </div>
       <button id="skip" class="skip" type="button"></button>
+      <p id="escapeHint" class="escape-hint"></p>
+
+      <!-- The Mola Ver gate: shown while the break is pending. Clicking begins
+           the countdown; if untouched it begins on its own after the timeout. -->
+      <div id="molaVerGate" class="mola-ver-gate">
+        <button id="molaVer" class="mola-ver" type="button"></button>
+        <p id="molaVerHint" class="mola-ver-hint"></p>
+      </div>
+
+      <!-- Easter egg: click into the event horizon four times during a break. -->
+      <div id="teamPanel" class="team-panel" hidden>
+        <span class="team-mark" aria-hidden="true"></span>
+        <strong class="team-title">BlackHolock</strong>
+        <p class="team-line">Ghost Felina · 2026</p>
+        <p class="team-credits">The team behind the hole</p>
+      </div>
     </section>
 
     <script type="module" src="./overlay.ts"></script>

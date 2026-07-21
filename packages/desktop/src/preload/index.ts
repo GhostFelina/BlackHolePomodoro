@@ -29,6 +29,14 @@ export interface UpdateResult {
   url?: string;
 }
 
+/** What the main process tells the overlay about the break screen. */
+export interface BreakSignal {
+  /** off = no break UI, pending = Mola Ver gate, active = running countdown. */
+  mode: 'off' | 'pending' | 'active';
+  /** For 'pending': epoch ms at which the break begins on its own. */
+  autoBeginAt?: number;
+}
+
 const api = {
   settings: {
     get: (): Promise<Settings> => ipcRenderer.invoke('settings:get'),
@@ -45,6 +53,8 @@ const api = {
     stop: (): Promise<EngineSyncState> => ipcRenderer.invoke('engine:stop'),
     breakNow: (): Promise<EngineSyncState> => ipcRenderer.invoke('engine:breakNow'),
     skipBreak: (): Promise<EngineSyncState> => ipcRenderer.invoke('engine:skipBreak'),
+    /** The Mola Ver button: begin the break countdown now, ending the wait. */
+    beginBreak: (): Promise<EngineSyncState> => ipcRenderer.invoke('engine:beginBreak'),
     onSync: (handler: (state: EngineSyncState) => void) => subscribe('engine:sync', handler),
   },
 
@@ -54,6 +64,23 @@ const api = {
       ipcRenderer.invoke('capture:source', displayId),
     permission: (): Promise<string> => ipcRenderer.invoke('capture:permission'),
     openPreferences: (): Promise<void> => ipcRenderer.invoke('capture:openPrefs'),
+  },
+
+  overlay: {
+    /**
+     * The break has begun (`true`) or ended (`false`). Driven by the main
+     * process, not by the WebGL animation, so the break screen appears even if
+     * the shader never renders.
+     */
+    onBreak: (handler: (signal: BreakSignal) => void) => subscribe('overlay:break', handler),
+    /**
+     * Tells the main process the break UI is actually on screen. Main waits for
+     * this before it lets the window swallow input — so it can never capture the
+     * mouse and keyboard while there is no visible way out.
+     */
+    ready: (): void => {
+      ipcRenderer.send('overlay:ready');
+    },
   },
 
   app: {

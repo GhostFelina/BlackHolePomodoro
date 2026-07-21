@@ -39,6 +39,11 @@
         <section class="panel" data-panel="timing">
           <h1 data-i18n="settings.section.timing"></h1>
 
+          <div class="focus-launch">
+            <button id="focusToggle" type="button" class="primary big"></button>
+            <span id="focusStatus" class="focus-status" aria-live="polite"></span>
+          </div>
+
           <div class="presets" id="presets"></div>
 
           <div class="field">
@@ -76,6 +81,15 @@
             </div>
             <figcaption id="timelineCaption"></figcaption>
           </figure>
+
+          <div class="field" id="sessionCyclesField">
+            <label for="sessionCycles" data-i18n="settings.sessionCycles"></label>
+            <p class="help" data-i18n="settings.sessionCycles.help"></p>
+            <div class="slider-row">
+              <input type="range" id="sessionCycles" min="0" max="20" step="1" />
+              <output for="sessionCycles" id="sessionCyclesOut"></output>
+            </div>
+          </div>
 
           <div class="toggles">
             <label class="switch">
@@ -361,6 +375,12 @@
             <li><a href="#" data-link="licence" data-i18n="about.licence"></a></li>
           </ul>
         </section>
+
+        <!-- Persist bar: edits stage locally and only reach disk on Save. -->
+        <footer class="action-bar">
+          <span id="unsavedHint" class="unsaved" hidden data-i18n="settings.unsavedChanges"></span>
+          <button id="save" type="button" class="primary save-btn" data-i18n="settings.save" disabled></button>
+        </footer>
       </main>
     </div>
 

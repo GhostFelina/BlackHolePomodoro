@@ -44,6 +44,15 @@ export const COLLAPSE_SECONDS = 1.2;
 const BIRTH_SECONDS = 2.5;
 
 /**
+ * The break shows the real black hole at rest — the same Gargantua the
+ * Appearance preview renders — sized so its own gravity fills the screen with
+ * the star field around it. A shadow radius of 0.30 of the short edge makes the
+ * influence (8×) exceed the diagonal on any normal aspect ratio, so the scene
+ * covers the display without ever collapsing to flat black.
+ */
+const BREAK_RADIUS = 0.3;
+
+/**
  * Fraction of the countdown the hole spends completely motionless.
  *
  * It appears, and then it does nothing at all: no drift, no growth, no wander.
@@ -163,7 +172,10 @@ export class Choreographer {
         // constant speed actually does to your field of view: almost nothing
         // for most of the approach, then everything at the end.
         const minRadius = Math.max(5, minEdge * 0.0045);
-        const maxRadius = diagonal * 0.55;
+        // The warning ends with a moderate hole over the desktop; the swallow is
+        // what makes it big. Growing all the way to the final size here left
+        // nothing for the swallow to do.
+        const maxRadius = minEdge * 0.14;
 
         const advance = p <= STATIC_HOLD ? 0 : (p - STATIC_HOLD) / (1 - STATIC_HOLD);
         const shaped = Math.pow(advance, 2.3);
@@ -212,7 +224,10 @@ export class Choreographer {
       case 'swallowing': {
         const s = clamp01(elapsed / SWALLOW_SECONDS);
         const accelerate = s * s * s;
-        const radius = lerp(this.radiusAtSwallow, diagonal * 0.78, accelerate);
+        // Grow to the resting break size, not past the screen. As the radius
+        // grows the hole's influence expands from the centre outward, so the
+        // star field fills the display smoothly instead of cutting to black.
+        const radius = lerp(this.radiusAtSwallow, minEdge * BREAK_RADIUS, accelerate);
 
         // Lock to centre quickly so the swallow feels inevitable, not wobbly.
         const lockIn = Math.min(s * 2.5, 1);
@@ -229,18 +244,21 @@ export class Choreographer {
           center: [cx, cy],
           radius,
           growth: 1,
-          blackout: smoothstep(0.55, 1, s),
+          blackout: 0,
         };
       }
 
       case 'blackout':
+        // The break at rest: the real Gargantua, centred and large, with the
+        // star field around it — the same thing the Appearance preview shows.
+        // No flat black; the countdown sits over the event horizon, which is
+        // black enough to read against on its own.
         return {
           ...base,
           center: [width * 0.5, height * 0.5],
-          radius: diagonal,
+          radius: minEdge * BREAK_RADIUS,
           growth: 1,
-          blackout: 1,
-          intensity: 1,
+          blackout: 0,
         };
 
       case 'collapsing': {
@@ -249,9 +267,9 @@ export class Choreographer {
         return {
           ...base,
           center: [width * 0.5, height * 0.5],
-          radius: lerp(diagonal * 0.78, 0, easeOut),
+          radius: lerp(minEdge * BREAK_RADIUS, 0, easeOut),
           growth: 1 - easeOut,
-          blackout: 1 - smoothstep(0, 0.45, s),
+          blackout: 0,
         };
       }
     }

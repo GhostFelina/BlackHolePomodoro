@@ -216,3 +216,63 @@ describe('formatDuration', () => {
     expect(formatDuration(-30)).toBe('00:00');
   });
 });
+
+describe('pause / resume (Mola Ver gate)', () => {
+  it('freezes the countdown while paused and loses no time on resume', () => {
+    let clock = 0;
+    const engine = new FocusEngine({
+      durations: { workSeconds: 60, breakSeconds: 600, warningSeconds: 30 },
+      now: () => clock,
+    });
+    engine.start();
+
+    // Enter the break, then pause exactly at its start.
+    clock = 60_000;
+    expect(engine.snapshot().phase).toBe('break');
+    engine.pause();
+    const full = engine.snapshot().remaining;
+    expect(full).toBeCloseTo(600, 1);
+
+    // Ten seconds of frozen wall time change nothing.
+    clock = 70_000;
+    expect(engine.snapshot().remaining).toBeCloseTo(full, 1);
+    expect(engine.isPaused).toBe(true);
+
+    // Resuming does not count the frozen time: the break still has its length.
+    engine.resume();
+    expect(engine.snapshot().remaining).toBeCloseTo(600, 1);
+    clock = 80_000; // 10s into the break now
+    expect(engine.snapshot().remaining).toBeCloseTo(590, 1);
+  });
+});
+
+describe('targetCycles (session length)', () => {
+  it('stops after the requested number of cycles', () => {
+    let clock = 0;
+    const engine = new FocusEngine({
+      durations: { workSeconds: 60, breakSeconds: 60, warningSeconds: 10 },
+      autoContinue: true,
+      targetCycles: 2,
+      now: () => clock,
+    });
+    engine.start(); // cycle length = 120s
+
+    clock = 130_000; // into the 2nd cycle
+    expect(engine.snapshot().phase).not.toBe('idle');
+    clock = 240_000; // end of the 2nd cycle
+    expect(engine.snapshot().phase).toBe('idle');
+  });
+
+  it('runs indefinitely when the target is zero', () => {
+    let clock = 0;
+    const engine = new FocusEngine({
+      durations: { workSeconds: 60, breakSeconds: 60, warningSeconds: 10 },
+      autoContinue: true,
+      targetCycles: 0,
+      now: () => clock,
+    });
+    engine.start();
+    clock = 600_000; // five cycles later
+    expect(engine.snapshot().phase).not.toBe('idle');
+  });
+});

@@ -2,6 +2,7 @@ import {
   app,
   BrowserWindow,
   desktopCapturer,
+  globalShortcut,
   ipcMain,
   Menu,
   nativeImage,
@@ -41,6 +42,8 @@ const devServerUrl = process.env.ELECTRON_RENDERER_URL;
 const fastArg = process.argv.find((arg) => arg.startsWith('--fast'));
 const TIME_SCALE = fastArg ? Number(fastArg.split('=')[1] ?? 60) || 60 : 1;
 const AUTOSTART = process.argv.includes('--autostart');
+/** How long the Mola Ver gate waits before the break begins on its own. */
+const MOLA_VER_SECONDS = 20;
 /** Opens the settings window straight away — used when reviewing the panel. */
 const OPEN_SETTINGS = process.argv.includes('--settings');
 const rendererDir = join(__dirname, '../renderer');
@@ -59,6 +62,7 @@ class BlackHolock {
   private tray: Tray | null = null;
   private settingsWindow: BrowserWindow | null = null;
   private tickTimer: NodeJS.Timeout | null = null;
+  private molaVerTimer: NodeJS.Timeout | null = null;
   private breakSoonNotified = false;
   private lastRenderedTrayTitle = '';
 
@@ -67,6 +71,7 @@ class BlackHolock {
     this.engine = new FocusEngine({
       durations: settingsToDurations(settings),
       autoContinue: settings.autoContinue,
+      targetCycles: settings.sessionCycles,
       timeScale: TIME_SCALE,
     });
     this.i18n.setLocale(settings.locale, app.getLocale());
@@ -75,7 +80,10 @@ class BlackHolock {
   // ------------------------------------------------------------------ startup
 
   async start(): Promise<void> {
-    // The overlay must never appear in the Dock or the alt-tab list.
+    // Start as a menu-bar utility with no Dock icon. A Dock icon and a window
+    // appear together the moment there is a real window to show, and go away
+    // again when it closes — see syncDock(). The transparent overlay never adds
+    // a Dock entry of its own: it is borderless and skips the taskbar.
     if (process.platform === 'darwin') app.dock?.hide();
 
     // The overlay windows are created on the first countdown, not at launch.
@@ -83,9 +91,17 @@ class BlackHolock {
     // the OS over everything else for as long as it exists, so one should not
     // exist during the 45 minutes when it has nothing to show.
     this.overlay = new OverlayManager(preloadPath, rendererDir, devServerUrl);
+    // If an overlay renderer ever crashes or hangs, stop the whole cycle so the
+    // screen is never left covered by a dead, input-swallowing window.
+    this.overlay.setEmergencyHandler(() => this.emergencyRelease('overlay renderer failure'));
 
     this.buildTray();
     this.registerIpc();
+    // The hard guarantee that the app can never trap the machine: a global
+    // shortcut, live for the entire session, handled entirely here in the main
+    // process. It works from any phase and does not depend on the overlay
+    // renderer being alive.
+    this.registerPanicShortcut();
 
     this.engine.onPhaseChange((next, previous) => this.handlePhaseChange(next, previous));
     this.i18n.subscribe(() => {
@@ -93,18 +109,32 @@ class BlackHolock {
       this.overlay.broadcast('locale:changed', this.i18n.getLocale());
     });
 
-    // A coarse tick is enough in the main process: the windows compute the
-    // animation themselves from the synced cycle start.
-    this.tickTimer = setInterval(() => this.tick(), 500);
+    // The tick only runs while a cycle is running. When idle there is nothing
+    // to count down and nothing to notify, so leaving a 500 ms timer firing
+    // forever just burned wakeups and kept the CPU (and App Nap) from settling.
+    // It is started in startFocus() and stopped when the engine goes idle.
 
     const settings = this.store.get();
     if (settings.launchAtLogin !== app.getLoginItemSettings().openAtLogin) {
       this.applyLoginItem(settings.launchAtLogin);
     }
     if (settings.autoStartOnLaunch || AUTOSTART) this.startFocus();
+    // Open the main window on a normal launch, so double-clicking the app icon
+    // opens a window in the Dock like any ordinary app. When macOS started us
+    // hidden at login, stay in the background — tray only, no window, no Dock.
+    const startedHidden =
+      process.platform === 'darwin' && app.getLoginItemSettings().wasOpenedAsHidden;
     if (OPEN_SETTINGS) this.openSettings('appearance');
+    else if (!startedHidden) this.openSettings();
     if (TIME_SCALE !== 1) console.log(`[BlackHolock] Fast mode: ${TIME_SCALE}× time scale`);
     if (settings.checkForUpdates) void this.checkForUpdates(false);
+
+    if (process.env.DEBUG_CAPTURE) {
+      const every = Number(process.env.DEBUG_CAPTURE) || 1500;
+      setInterval(() => {
+        void this.overlay.captureTo(`/tmp/cap_${Date.now()}.png`);
+      }, every);
+    }
 
     const storeError = this.store.takeError();
     if (storeError) {
@@ -119,15 +149,30 @@ class BlackHolock {
   private startFocus(): void {
     this.breakSoonNotified = false;
     this.engine.start();
+    this.startTicking();
     this.pushSync();
     this.refreshTray();
   }
 
   private stopFocus(): void {
     this.engine.stop();
+    this.stopTicking();
     this.overlay.hide();
     this.pushSync();
     this.refreshTray();
+  }
+
+  /** Runs the 500 ms countdown tick only while a cycle is live. */
+  private startTicking(): void {
+    if (this.tickTimer) return;
+    this.tickTimer = setInterval(() => this.tick(), 500);
+  }
+
+  private stopTicking(): void {
+    if (this.tickTimer) {
+      clearInterval(this.tickTimer);
+      this.tickTimer = null;
+    }
   }
 
   private tick(): void {
@@ -148,23 +193,34 @@ class BlackHolock {
       case 'warning':
         this.overlay.ensure(settings);
         this.overlay.show();
-        this.overlay.setBreakMode(false);
+        this.overlay.setBreakMode('off');
         break;
 
       case 'break':
         this.overlay.ensure(settings);
         this.overlay.show();
-        // The window only starts swallowing input once the animation has
-        // finished covering the screen, so the last seconds of work are not
-        // stolen by a window that is still mostly transparent.
+        // Freeze the break at its full length: it does not begin counting down
+        // until the user presses Mola Ver, or the gate times out.
+        this.engine.pause();
+        // A system-wide escape hatch, live for the whole break.
+        this.registerBreakEscape();
+        // After the swallow animation has covered the screen, raise the Mola Ver
+        // gate — the break UI, but paused, waiting to begin.
         setTimeout(() => {
-          if (this.engine.snapshot().phase === 'break') this.overlay.setBreakMode(true);
+          if (this.engine.snapshot().phase !== 'break') return;
+          const autoBeginAt = Date.now() + MOLA_VER_SECONDS * 1000;
+          this.overlay.setBreakMode('pending', autoBeginAt);
+          // Auto-begin if the user does nothing.
+          this.clearMolaVerTimeout();
+          this.molaVerTimer = setTimeout(() => this.beginBreak(), MOLA_VER_SECONDS * 1000);
         }, 2200 / scale);
         break;
 
       case 'focus':
-        this.overlay.setBreakMode(false);
+        this.overlay.setBreakMode('off');
+        this.clearMolaVerTimeout();
         this.breakSoonNotified = false;
+        this.unregisterBreakEscape();
         if (previous === 'break') {
           if (settings.notifyBeforeBreak) {
             this.notify(
@@ -182,6 +238,9 @@ class BlackHolock {
         break;
 
       case 'idle':
+        this.unregisterBreakEscape();
+        this.clearMolaVerTimeout();
+        this.stopTicking();
         this.overlay.hide();
         break;
     }
@@ -278,6 +337,97 @@ class BlackHolock {
     return Menu.buildFromTemplate(items);
   }
 
+  /**
+   * Binds the emergency escape for the duration of a break.
+   *
+   * Cmd+Escape (Ctrl+Escape on Windows/Linux) ends the break immediately, from
+   * anywhere, regardless of what has keyboard focus. The break overlay is
+   * deliberately not focusable and sits above the menu bar, which means the
+   * ordinary ways out — the tray menu, a click on a control — can be out of
+   * reach. This cannot be. A focus app that can lock you out of your own
+   * machine for ten minutes is broken, so this shortcut is the hard guarantee
+   * that the break is always escapable.
+   */
+  private registerBreakEscape(): void {
+    const accel = process.platform === 'darwin' ? 'Command+Escape' : 'Control+Escape';
+    for (const shortcut of [accel, 'CommandOrControl+Shift+B']) {
+      try {
+        const ok = globalShortcut.register(shortcut, () => {
+          if (this.engine.snapshot().phase === 'break') this.skipBreak();
+        });
+        if (!ok || !globalShortcut.isRegistered(shortcut)) {
+          // register() returns false (rather than throwing) when the OS owns the
+          // combo — Command+Escape on macOS often does. Do not trust it silently;
+          // the always-on panic shortcut is the real guarantee, so just note it.
+          console.warn(`[BlackHolock] Break-skip shortcut unavailable: ${shortcut}`);
+        }
+      } catch (error) {
+        console.error(`[BlackHolock] Could not register ${shortcut}:`, error);
+      }
+    }
+  }
+
+  private unregisterBreakEscape(): void {
+    globalShortcut.unregister('Command+Escape');
+    globalShortcut.unregister('Control+Escape');
+    globalShortcut.unregister('CommandOrControl+Shift+B');
+  }
+
+  /**
+   * The panic release. Registered once, for the whole life of the app, and
+   * handled entirely in the main process so it survives an overlay renderer
+   * crash. It returns full control from *any* state: break mode off, overlay
+   * destroyed, engine stopped so nothing re-covers the screen. This is the
+   * promise that BlackHolock can never lock you out of your own machine.
+   *
+   * The accelerators are kept disjoint from the break-skip ones above so the
+   * two never clobber each other's registration.
+   */
+  private registerPanicShortcut(): void {
+    const accelerators = [
+      'CommandOrControl+Alt+Shift+H', // primary — registers reliably everywhere
+      'CommandOrControl+Alt+Shift+Escape',
+    ];
+    const registered: string[] = [];
+    for (const accel of accelerators) {
+      try {
+        if (
+          globalShortcut.register(accel, () => this.emergencyRelease('panic shortcut')) &&
+          globalShortcut.isRegistered(accel)
+        ) {
+          registered.push(accel);
+        }
+      } catch (error) {
+        console.error(`[BlackHolock] Could not register ${accel}:`, error);
+      }
+    }
+    if (registered.length === 0) {
+      console.error(
+        '[BlackHolock] No emergency-release shortcut could be registered. ' +
+          'The tray menu is still available; investigate before shipping.',
+      );
+    } else {
+      console.log(`[BlackHolock] Emergency release: ${registered.join(' / ')}`);
+    }
+  }
+
+  /**
+   * Returns full control to the user, from any phase, right now. Safe to call
+   * repeatedly and whether or not a cycle is running.
+   */
+  private emergencyRelease(source: string): void {
+    console.log(`[BlackHolock] Emergency release (${source}) — returning control to the user`);
+    // Drop input-swallowing immediately, before the slower teardown below.
+    this.overlay.forceReleaseInput();
+    this.unregisterBreakEscape();
+    this.clearMolaVerTimeout();
+    this.engine.stop();
+    this.overlay.hide();
+    this.breakSoonNotified = false;
+    this.pushSync();
+    this.refreshTray();
+  }
+
   private breakNow(): void {
     this.engine.breakNow();
     this.pushSync();
@@ -285,17 +435,62 @@ class BlackHolock {
   }
 
   private skipBreak(): void {
+    this.clearMolaVerTimeout();
     this.engine.skipBreak();
-    this.overlay.setBreakMode(false);
+    this.overlay.setBreakMode('off');
     this.overlay.hide();
     this.pushSync();
     this.refreshTray();
   }
 
+  /**
+   * The Mola Ver button (or the gate's timeout): begin the break countdown now.
+   * Resumes the paused engine and switches the overlay from the waiting gate to
+   * the running countdown.
+   */
+  private beginBreak(): void {
+    this.clearMolaVerTimeout();
+    if (this.engine.snapshot().phase !== 'break') return;
+    this.engine.resume();
+    this.overlay.setBreakMode('active');
+    this.pushSync();
+    this.refreshTray();
+  }
+
+  private clearMolaVerTimeout(): void {
+    if (this.molaVerTimer) {
+      clearTimeout(this.molaVerTimer);
+      this.molaVerTimer = null;
+    }
+  }
+
   // ----------------------------------------------------------------- settings
+
+  /**
+   * The Dock icon follows the window: shown while a settings window is open,
+   * hidden when there is none. This is what lets a double-click on the app icon
+   * open a real Dock window, without the app cluttering the Dock the rest of the
+   * time it lives quietly in the menu bar.
+   */
+  private syncDock(): void {
+    if (process.platform !== 'darwin') return;
+    const hasWindow = !!this.settingsWindow && !this.settingsWindow.isDestroyed();
+    if (hasWindow) void app.dock?.show();
+    else app.dock?.hide();
+  }
+
+  /**
+   * Reopen from the Dock icon or from double-clicking the app while it is
+   * already running (macOS fires `activate` / `second-instance`). Brings the
+   * settings window back, creating it if the last one was closed.
+   */
+  reopen(): void {
+    this.openSettings();
+  }
 
   private openSettings(section?: string): void {
     if (this.settingsWindow && !this.settingsWindow.isDestroyed()) {
+      this.syncDock();
       this.settingsWindow.show();
       this.settingsWindow.focus();
       if (section) this.settingsWindow.webContents.send('settings:navigate', section);
@@ -328,12 +523,27 @@ class BlackHolock {
       if (level >= 1 || isDev) console.log(`[settings] ${message}`);
     });
 
+    // The settings window runs a live WebGL preview. If that renderer ever
+    // crashes the window would be left blank; reload it once so the panel comes
+    // back instead of showing an empty shell.
+    win.webContents.on('render-process-gone', (_event, details) => {
+      if (details.reason === 'clean-exit' || win.isDestroyed()) return;
+      console.error(`[settings] renderer gone (${details.reason}); reloading`);
+      win.reload();
+    });
+
     win.once('ready-to-show', () => {
+      // Show the Dock icon alongside the window, then bring both to the front.
+      this.syncDock();
       win.show();
+      win.focus();
+      if (process.platform === 'darwin') app.focus({ steal: true });
       if (section) win.webContents.send('settings:navigate', section);
     });
     win.on('closed', () => {
       this.settingsWindow = null;
+      // Back to a pure menu-bar utility once the last window is gone.
+      this.syncDock();
     });
 
     // External links open in the real browser, never inside the app.
@@ -363,6 +573,9 @@ class BlackHolock {
     }
     if (settings.autoContinue !== before.autoContinue) {
       this.engine.setAutoContinue(settings.autoContinue);
+    }
+    if (settings.sessionCycles !== before.sessionCycles) {
+      this.engine.setTargetCycles(settings.sessionCycles);
     }
     if (settings.locale !== before.locale) {
       this.i18n.setLocale(settings.locale, app.getLocale());
@@ -502,6 +715,10 @@ class BlackHolock {
       this.skipBreak();
       return this.engine.getSyncState();
     });
+    ipcMain.handle('engine:beginBreak', () => {
+      this.beginBreak();
+      return this.engine.getSyncState();
+    });
 
     ipcMain.handle('app:info', () => ({
       name: PRODUCT.name,
@@ -537,6 +754,7 @@ class BlackHolock {
   }
 
   private quit(): void {
+    globalShortcut.unregisterAll();
     this.store.flush();
     if (this.tickTimer) clearInterval(this.tickTimer);
     this.overlay.dispose();
@@ -554,6 +772,29 @@ app.commandLine.appendSwitch('enable-gpu-rasterization');
 const instance = new BlackHolock();
 
 void app.whenReady().then(() => instance.start());
+
+// Double-clicking the app icon while it is already running (it lives in the
+// menu bar, so it usually is) lands here rather than starting a new process.
+// Both paths reopen the window instead of doing nothing.
+app.on('second-instance', () => instance.reopen());
+app.on('activate', () => instance.reopen());
+
+// Visibility into GPU / utility process crashes. The overlay renderer has its
+// own recovery (see OverlayManager); this catches the GPU process and friends,
+// which is where the transparent-window + WebGL crashes showed up. Logged, not
+// swallowed, so a support build can tell why a machine misbehaved. A repeatedly
+// crashing GPU process is Chromium's own signal to consider disabling hardware
+// acceleration, but we never trap the user over it.
+app.on('child-process-gone', (_event, details) => {
+  if (details.reason === 'clean-exit' || details.reason === 'killed') return;
+  console.error(
+    `[BlackHolock] Child process gone: type=${details.type} reason=${details.reason} exit=${details.exitCode}`,
+  );
+});
+app.on('render-process-gone', (_event, _contents, details) => {
+  if (details.reason === 'clean-exit') return;
+  console.error(`[BlackHolock] Renderer gone: reason=${details.reason} exit=${details.exitCode}`);
+});
 
 app.on('window-all-closed', () => {
   // A tray app stays alive with no windows open. This is deliberate.

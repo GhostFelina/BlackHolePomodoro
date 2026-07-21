@@ -821,3 +821,84 @@ button.ghost.inline {
     aspect-ratio: 16 / 10;
   }
 }
+
+/* ------------------------------------------------- start focus (timing tab) */
+
+/*
+ * The primary launch control at the top of the Timing panel. It mirrors the
+ * tray: start a session, or stop the one that is running, without leaving the
+ * window.
+ */
+.focus-launch {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+button.primary.big {
+  padding: 12px 26px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* When a session is live the button becomes a Stop, tinted to read as active. */
+button.primary.big.running {
+  background: rgba(255, 90, 70, 0.14);
+  border-color: rgba(255, 90, 70, 0.5);
+  color: #ff9a86;
+}
+
+.focus-status {
+  font-size: 13px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* -------------------------------------------------------------- action bar */
+
+/*
+ * Sticky Save bar. Edits stage in memory and only reach disk here, so the bar
+ * hugs the bottom of the scrolling content and stays in reach from any field.
+ */
+.action-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+
+  /* Cancel the content padding so the bar spans edge to edge and sits flush. */
+  margin: 28px -40px -56px;
+  padding: 14px 40px;
+
+  border-top: 1px solid var(--line);
+  background: rgba(8, 9, 14, 0.86);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.unsaved {
+  margin-inline-end: auto;
+  font-size: 13px;
+  color: var(--accent);
+}
+
+.unsaved::before {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-inline-end: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  vertical-align: middle;
+}
+
+button.save-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+  filter: grayscale(0.6);
+}

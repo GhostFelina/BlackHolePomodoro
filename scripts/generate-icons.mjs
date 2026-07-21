@@ -90,12 +90,22 @@ const mix = (a, b, t) => a + (b - a) * t;
  * Supersampled 3×3 per pixel, which at 16 px is the difference between a
  * jagged blob and a crisp ring.
  */
-function drawMark(size, { silhouette = false, padding = 0.10 } = {}) {
+function drawMark(size, { silhouette = false, padding = 0.10, plate = false } = {}) {
   const rgba = new Uint8ClampedArray(size * size * 4);
   const SS = 3;
   const cx = size / 2;
   const cy = size / 2;
   const R = (size / 2) * (1 - padding);   // outer extent of the artwork
+
+  // Dark backing tile. A rounded-square plate in near-black turns the mark from
+  // a ring floating on the wallpaper into a proper dark-themed app icon: it
+  // reads as intentional on the Desktop and in the Dock, and the accretion disc
+  // glows against it. Never drawn for the silhouette (template) tray icon.
+  const plateHalf = size * 0.46;          // half extent, small margin to canvas
+  const plateRadius = size * 0.21;        // squircle-ish corner radius
+  const plateAA = Math.max(size * 0.006, 0.5);
+  const bgCenter = [0.055, 0.063, 0.102]; // lifted deep-navy centre
+  const bgEdge = [0.016, 0.020, 0.039];   // near-black edge
   const horizon = R * 0.42;               // event horizon radius
   const ringR = horizon * 1.16;           // photon ring
   const discInner = horizon * 1.55;
@@ -171,6 +181,33 @@ function drawMark(size, { silhouette = false, padding = 0.10 } = {}) {
             pb = mix(pb, 0, swallow);
           }
 
+          // Composite the mark over the dark plate.
+          if (plate && !silhouette) {
+            // Rounded-rectangle signed distance: negative inside the tile.
+            const qx = Math.abs(x) - (plateHalf - plateRadius);
+            const qy = Math.abs(y) - (plateHalf - plateRadius);
+            const sd =
+              Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) +
+              Math.min(Math.max(qx, qy), 0) -
+              plateRadius;
+            const cov = 1 - smoothstep(-plateAA, plateAA, sd); // opaque inside
+
+            // Radial gradient, darkest at the edges.
+            const t = clamp01(dist / (plateHalf * 1.15));
+            const rim = Math.exp(-Math.pow(sd / (size * 0.012), 2)) * 0.10; // faint edge
+            const br = clamp01(mix(bgCenter[0], bgEdge[0], t) + rim * 0.5);
+            const bgc = clamp01(mix(bgCenter[1], bgEdge[1], t) + rim * 0.55);
+            const bb = clamp01(mix(bgCenter[2], bgEdge[2], t) + rim * 0.7);
+
+            const oa = pa + cov * (1 - pa);
+            if (oa > 1e-6) {
+              pr = (pr * pa + br * cov * (1 - pa)) / oa;
+              pg = (pg * pa + bgc * cov * (1 - pa)) / oa;
+              pb = (pb * pa + bb * cov * (1 - pa)) / oa;
+            }
+            pa = oa;
+          }
+
           r += pr; g += pg; b += pb; a += pa;
         }
       }
@@ -197,11 +234,14 @@ function write(path, size, options) {
 
 console.log('BlackHolock — generating brand assets');
 
-// App icon, every size electron-builder wants.
+// App icon, every size electron-builder wants. A dark rounded-square plate with
+// the black hole set a little inside it — a proper dark-themed icon rather than
+// a ring floating on the wallpaper.
+const APP_ICON = { plate: true, padding: 0.22 };
 for (const size of [16, 32, 64, 128, 256, 512, 1024]) {
-  write(join(brandDir, 'icon', `icon-${size}.png`), size);
+  write(join(brandDir, 'icon', `icon-${size}.png`), size, APP_ICON);
 }
-write(join(resourcesDir, 'icon.png'), 1024);
+write(join(resourcesDir, 'icon.png'), 1024, APP_ICON);
 
 // Tray icons. macOS wants a template silhouette at 1× and 2×; Windows and
 // Linux take the colour version.
@@ -212,7 +252,7 @@ write(join(resourcesDir, 'tray@2x.png'), 40, { padding: 0.06 });
 
 // Social preview / README hero.
 mkdirSync(brandDir, { recursive: true });
-writeFileSync(join(brandDir, 'mark-512.png'), encodePng(512, 512, drawMark(512)));
+writeFileSync(join(brandDir, 'mark-512.png'), encodePng(512, 512, drawMark(512, APP_ICON)));
 console.log('  ✓ ./brand/mark-512.png (512×512)');
 
 console.log('Done.');

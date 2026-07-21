@@ -40,9 +40,12 @@ export interface Messages {
   'break.subtitle': string;
   'break.remaining': string;
   'break.skip': string;
+  'break.startBreak': string;
+  'break.startBreakIn': string;
   'break.skipConfirm': string;
   'break.strictNotice': string;
   'break.returning': string;
+  'break.escapeHint': string;
 
   // -- warning notification -------------------------------------------------
   'notify.breakSoonTitle': string;
@@ -60,6 +63,7 @@ export interface Messages {
   'settings.section.about': string;
   'settings.save': string;
   'settings.saved': string;
+  'settings.unsavedChanges': string;
   'settings.reset': string;
   'settings.resetConfirm': string;
   'settings.minutes': string;
@@ -74,6 +78,9 @@ export interface Messages {
   'settings.warningMinutes.help': string;
   'settings.autoContinue': string;
   'settings.autoContinue.help': string;
+  'settings.sessionCycles': string;
+  'settings.sessionCycles.help': string;
+  'settings.sessionCycles.unlimited': string;
   'settings.autoStartOnLaunch': string;
   'settings.autoStartOnLaunch.help': string;
   'settings.presets': string;

@@ -32,6 +32,11 @@ export interface Settings {
   warningMinutes: number;
   /** Begin the next focus cycle automatically once a break ends. */
   autoContinue: boolean;
+  /**
+   * How many focus/break cycles a session runs before it stops on its own.
+   * 0 means unlimited. Only meaningful while autoContinue is on.
+   */
+  sessionCycles: number;
   /** Start the timer as soon as the app launches. */
   autoStartOnLaunch: boolean;
 
@@ -97,10 +102,11 @@ export const DEFAULT_SETTINGS: Settings = Object.freeze({
   breakMinutes: 10,
   warningMinutes: 5,
   autoContinue: true,
+  sessionCycles: 0,
   autoStartOnLaunch: false,
 
   effectId: 'gargantua',
-  screenLensing: true,
+  screenLensing: false,
   maxFps: 0,
   intensity: 1,
   accent: 'ember',
@@ -111,7 +117,7 @@ export const DEFAULT_SETTINGS: Settings = Object.freeze({
   inclination: 3.2,
   doppler: 0.12,
   starDensity: 1,
-  nebula: 1,
+  nebula: 0,
   suction: 1,
   reducedMotion: false,
 
@@ -130,6 +136,7 @@ export const LIMITS = Object.freeze({
   workMinutes: { min: 1, max: 240, step: 1 },
   breakMinutes: { min: 1, max: 120, step: 1 },
   warningMinutes: { min: 1, max: 60, step: 1 },
+  sessionCycles: { min: 0, max: 20, step: 1 },
   skipArmSeconds: { min: 0, max: 60, step: 1 },
   intensity: { min: 0.2, max: 1, step: 0.05 },
   bloom: { min: 0, max: 2, step: 0.05 },
@@ -166,6 +173,7 @@ export function sanitizeSettings(input: unknown, base: Settings = DEFAULT_SETTIN
     breakMinutes: num(raw.breakMinutes, base.breakMinutes, LIMITS.breakMinutes),
     warningMinutes: num(raw.warningMinutes, base.warningMinutes, LIMITS.warningMinutes),
     autoContinue: bool(raw.autoContinue, base.autoContinue),
+    sessionCycles: num(raw.sessionCycles, base.sessionCycles, LIMITS.sessionCycles),
     autoStartOnLaunch: bool(raw.autoStartOnLaunch, base.autoStartOnLaunch),
 
     effectId: str(raw.effectId, base.effectId),

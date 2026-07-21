@@ -1,9 +1,11 @@
 import {
   ACCENT_ORDER,
+  FocusEngine,
   I18n,
   LOCALES,
   LOCALE_CODES,
   formatDuration,
+  type EngineSyncState,
   type LocaleCode,
   type MessageKey,
   type Settings,
@@ -22,8 +24,21 @@ declare global {
 const api = window.blackholock;
 const i18n = new I18n();
 
+/**
+ * `settings` is the working draft the whole panel edits. Edits stage here and
+ * only reach disk when Save is pressed, which is what gives the Save button a
+ * real job. `dirty` tracks whether the draft has diverged from what is stored.
+ */
 let settings: Settings;
 let info: AppInfo;
+let dirty = false;
+
+/** A local mirror of the main-process engine, purely to drive the Start button
+ * and its live status without one IPC message per second. */
+const focusMirror = new FocusEngine({
+  durations: { workSeconds: 1500, breakSeconds: 300, warningSeconds: 180 },
+});
+let focusStatusTimer: number | null = null;
 
 const $ = <T extends HTMLElement>(selector: string): T =>
   document.querySelector(selector) as T;
@@ -53,6 +68,7 @@ function applyTranslations(): void {
   renderStrictness();
   renderLanguages();
   renderAbout();
+  renderFocusControl();
   syncControls();
 }
 
@@ -297,6 +313,73 @@ function setupAbout(): void {
   });
 }
 
+// -------------------------------------------------------------- focus control
+
+/**
+ * The Start/Stop control in the Timing panel. It drives the same engine the
+ * tray does, and shows the same live status, so the window is a first-class
+ * place to run a session from — not just to configure one.
+ */
+function setupFocusControl(): void {
+  $id<HTMLButtonElement>('focusToggle').addEventListener('click', async () => {
+    if (focusMirror.isRunning) {
+      await api.engine.stop();
+    } else {
+      // Starting should honour what is on screen. If the durations were edited
+      // but not saved, save them first so the session begins with them.
+      if (dirty) await save();
+      await api.engine.start();
+    }
+  });
+
+  // Stay in step with the authoritative engine, wherever it was started from.
+  api.engine.onSync((state: EngineSyncState) => {
+    focusMirror.applySyncState(state);
+    renderFocusControl();
+  });
+  void api.engine.state().then((state) => {
+    focusMirror.applySyncState(state);
+    renderFocusControl();
+  });
+}
+
+/** Sets the button label and colour, and runs the status ticker while live. */
+function renderFocusControl(): void {
+  const button = document.getElementById('focusToggle') as HTMLButtonElement | null;
+  const status = document.getElementById('focusStatus');
+  if (!button || !status) return;
+
+  const running = focusMirror.isRunning;
+  button.textContent = i18n.t(running ? 'tray.stop' : 'tray.start');
+  button.classList.toggle('running', running);
+
+  if (!running) {
+    status.textContent = i18n.t('tray.statusIdle');
+    if (focusStatusTimer) {
+      clearInterval(focusStatusTimer);
+      focusStatusTimer = null;
+    }
+    return;
+  }
+  updateFocusStatus();
+  if (!focusStatusTimer) focusStatusTimer = window.setInterval(updateFocusStatus, 500);
+}
+
+function updateFocusStatus(): void {
+  const snapshot = focusMirror.snapshot();
+  const time = formatDuration(snapshot.remaining);
+  const key: MessageKey =
+    snapshot.phase === 'break'
+      ? 'tray.statusBreak'
+      : snapshot.phase === 'warning'
+        ? 'tray.statusWarning'
+        : snapshot.phase === 'focus'
+          ? 'tray.statusFocus'
+          : 'tray.statusIdle';
+  const status = document.getElementById('focusStatus');
+  if (status) status.textContent = i18n.t(key, { time });
+}
+
 // ------------------------------------------------------------------ bindings
 
 const SLIDERS = [
@@ -385,11 +468,19 @@ function setupControls(): void {
   fps.addEventListener('input', () => writeFpsOutput(Number(fps.value)));
   fps.addEventListener('change', () => void patch({ maxFps: Number(fps.value) }));
 
+  const cycles = $id<HTMLInputElement>('sessionCycles');
+  cycles.addEventListener('input', () => writeCyclesOutput(Number(cycles.value)));
+  cycles.addEventListener('change', () => void patch({ sessionCycles: Number(cycles.value) }));
+
   $id<HTMLInputElement>('languageSearch').addEventListener('input', renderLanguages);
+
+  $id('save').addEventListener('click', () => void save());
 
   $id('reset').addEventListener('click', async () => {
     if (!confirm(i18n.t('settings.resetConfirm'))) return;
     settings = await api.settings.reset();
+    dirty = false;
+    updateSaveState();
     await syncLocale();
     applyTranslations();
     toast(i18n.t('settings.saved'));
@@ -402,6 +493,12 @@ function writeSliderOutput(id: string, value: number, unitKey: string): void {
 
 function writeFpsOutput(value: number): void {
   $id('maxFpsOut').textContent = value === 0 ? i18n.t('settings.maxFps.auto') : `${value} Hz`;
+}
+
+/** 0 reads as "unlimited"; any other value is a plain cycle count. */
+function writeCyclesOutput(value: number): void {
+  $id('sessionCyclesOut').textContent =
+    value === 0 ? i18n.t('settings.sessionCycles.unlimited') : String(value);
 }
 
 /** Redraws the timeline from the raw slider positions, before saving. */
@@ -439,6 +536,11 @@ function syncControls(): void {
 
   $id<HTMLInputElement>('maxFps').value = String(settings.maxFps);
   writeFpsOutput(settings.maxFps);
+
+  $id<HTMLInputElement>('sessionCycles').value = String(settings.sessionCycles);
+  writeCyclesOutput(settings.sessionCycles);
+  // The cycle count only bites while auto-continue is on.
+  $id('sessionCyclesField').hidden = !settings.autoContinue;
 
   for (const slider of EFFECT_SLIDERS) {
     const value = settings[slider.id as keyof Settings] as number;
@@ -579,22 +681,21 @@ function toast(message: string): void {
 }
 
 /**
- * Persists a change and refreshes only what that change can affect.
+ * Stages a change into the draft and refreshes only what that change can
+ * affect. Nothing is written to disk here — that waits for Save.
  *
- * This used to rebuild every list in the window — presets, effect cards,
- * accent swatches, strictness cards and the whole twelve-entry language
- * picker — on every slider release. Dragging a slider therefore queued dozens
- * of full DOM rebuilds, which is what made buttons feel dead: the main thread
- * was busy re-creating elements that had not changed.
+ * Refreshing selectively (not rebuilding every list on each slider release)
+ * keeps dragging responsive: the main thread is not busy re-creating elements
+ * that did not change.
  */
-async function patch(update: Partial<Settings>): Promise<void> {
-  settings = await api.settings.set(update);
+function patch(update: Partial<Settings>): void {
+  settings = { ...settings, ...update };
+  markDirty();
   const changed = new Set(Object.keys(update));
 
   if (changed.has('locale')) {
-    await syncLocale();
-    applyTranslations();
-    toast(i18n.t('settings.saved'));
+    // Preview the language immediately, without persisting it.
+    void syncLocale().then(applyTranslations);
     return;
   }
 
@@ -606,6 +707,32 @@ async function patch(update: Partial<Settings>): Promise<void> {
   if (changed.has('strictness')) renderStrictness();
 
   syncControls();
+}
+
+/** Marks the draft dirty and lights up the Save bar. */
+function markDirty(): void {
+  dirty = true;
+  updateSaveState();
+}
+
+/** Reflects dirty state in the Save button and the unsaved indicator. */
+function updateSaveState(): void {
+  $id<HTMLButtonElement>('save').disabled = !dirty;
+  $id('unsavedHint').hidden = !dirty;
+}
+
+/**
+ * Commits the draft. This is the one place the panel writes to disk and applies
+ * to the running engine and overlay. The main process validates and clamps, so
+ * the returned settings are adopted as the new baseline.
+ */
+async function save(): Promise<void> {
+  if (!dirty) return;
+  settings = await api.settings.set(settings);
+  dirty = false;
+  updateSaveState();
+  await syncLocale();
+  applyTranslations();
   toast(i18n.t('settings.saved'));
 }
 
@@ -621,10 +748,16 @@ async function boot(): Promise<void> {
   setupNav();
   setupControls();
   setupAbout();
+  setupFocusControl();
   applyTranslations();
+  updateSaveState();
 
+  // The main process only pushes this after our own Save (or reset), so the
+  // draft and the store are back in agreement: adopt it and clear dirty.
   api.settings.onChanged(async (next) => {
     settings = next;
+    dirty = false;
+    updateSaveState();
     await syncLocale();
     applyTranslations();
   });
